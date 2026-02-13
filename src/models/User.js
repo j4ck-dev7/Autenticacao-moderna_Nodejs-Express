@@ -5,7 +5,8 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true, minlength: 13, maxlength: 50 },
     password: { type: String, required: true, minlength: 8, maxlength: 100 },
     admin: { type: Boolean, default: false },
-    createdAt: { type: Date, default: Date.now },
+    subGoogle: { type: String, default: null },
+    createdAt: { type: Date, default: Date.now }
 })
 
 export default mongoose.model('User', userSchema);
