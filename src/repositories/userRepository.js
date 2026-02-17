@@ -10,9 +10,24 @@ export const createUser = async (name, email, password) => {
     return await user.save();
 }
 
+export const createUserWithOauth = async (sub, name) => {
+    const user = new User({
+        subGoogle: sub,
+        name
+    });
+
+    return await user.save();
+}
+
 export const findUserByEmail = async (email) => {
     return await User.findOne({ email })
         .select('email name password')
+        .lean();
+}
+
+export const findUserByOauth = async (sub) => {
+    return await User.findOne({ subGoogle: sub })
+        .select('email name subGoogle')
         .lean();
 }
 

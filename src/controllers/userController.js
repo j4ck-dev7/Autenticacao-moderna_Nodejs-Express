@@ -1,4 +1,30 @@
-import { registerUser, loginUser } from "../services/userService.js";
+import { registerUser, loginUser, registerWithOauth, OauthRequest } from "../services/userService.js";
+
+export const getOauthUrl = async (req, res) => {
+    try {
+        const url = await OauthRequest();
+        res.status(200).json({ url })
+    } catch (error) {
+        res.status(500).json({ message: 'Erro ao gerar url para autenticação Oauth' })
+        console.log(error)
+    }
+}
+
+export const signUpWithOauth = async (req, res) => {
+    const { code } = req.query
+    
+    try {
+        await registerWithOauth(code);
+        res.status(201).json({ message: 'Usuário logado com Oauth' })
+    } catch (error) {
+        if(error.message === 'Usuário existente'){
+            return res.status(401).json({ message: 'Usuário existente' })
+        };
+
+        res.status(500).json({ error: 'Erro ao registrar usuário' });
+        console.log(error);
+    }
+}
 
 export const signUp = async (req, res) => {
     const { name, email, password } = req.body;
