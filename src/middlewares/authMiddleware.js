@@ -5,7 +5,7 @@ export const Auth = (req, res, next) => {
     if(!cookie) return res.status(401).json({ message: 'Access Denied' })
     
     try {
-        const userVeriefied = jwt.verify(cookie, process.env.JWT_SECRET);
+        const userVeriefied = jwt.verify(cookie, process.env.SECRET);
         req.user = userVeriefied;
         next();
     } catch (error) {

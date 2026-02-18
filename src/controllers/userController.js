@@ -17,7 +17,7 @@ export const signUpWithOauth = async (req, res) => {
     try {
         const service = await registerWithOauth(code);
 
-        const token = jwt.sign({ user: service.subGoogle, }, process.env.JWT_SECRET);
+        const token = jwt.sign({ user: service.subGoogle, }, process.env.SECRET);
         res.cookie('authencationToken', token, { expires: new Date(Date.now() + 900000), httpOnly: true, secure: true });
 
         res.status(201).json({ message: 'Usuário logado com Oauth' });
