@@ -61,4 +61,13 @@ export const signIn = async (req, res) => {
         res.status(500).json({ error: 'Erro ao fazer login' });
         console.log(error);
     }
+};
+
+export const mainPage = (req, res) => {
+    try {
+        res.status(200).json({ message: 'Página principal acessada com sucesso' })
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ message: 'Erro ao acessar a página principal' })
+    }
 }
