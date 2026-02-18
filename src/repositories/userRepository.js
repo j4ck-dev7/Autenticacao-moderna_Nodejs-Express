@@ -13,7 +13,8 @@ export const createUser = async (name, email, password) => {
 export const createUserWithOauth = async (sub, name) => {
     const user = new User({
         subGoogle: sub,
-        name
+        name,
+        autenticationType: 'google'
     });
 
     return await user.save();
