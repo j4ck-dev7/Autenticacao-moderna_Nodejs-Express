@@ -1,4 +1,5 @@
 import { registerUser, loginUser, registerWithOauth, OauthRequest } from "../services/userService.js";
+import jwt from 'jsonwebtoken'
 
 export const getOauthUrl = async (req, res) => {
     try {
@@ -14,8 +15,12 @@ export const signUpWithOauth = async (req, res) => {
     const { code } = req.query
     
     try {
-        await registerWithOauth(code);
-        res.status(201).json({ message: 'Usuário logado com Oauth' })
+        const service = await registerWithOauth(code);
+
+        const token = jwt.sign({ user: service.subGoogle, }, process.env.JWT_SECRET);
+        res.cookie('authencationToken', token, { expires: new Date(Date.now() + 900000), httpOnly: true, secure: true });
+
+        res.status(201).json({ message: 'Usuário logado com Oauth' });
     } catch (error) {
         if(error.message === 'Usuário existente'){
             return res.status(401).json({ message: 'Usuário existente' })
