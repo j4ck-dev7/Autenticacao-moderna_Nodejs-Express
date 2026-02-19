@@ -1,9 +1,19 @@
-import { registerUser, loginUser, registerWithOauth, OauthRequest } from "../services/userService.js";
+import { registerUser, loginUser, registerWithOauth, OauthRequestSignIn, OauthRequestSignUp, loginWithOauth } from "../services/userService.js";
 import jwt from 'jsonwebtoken'
 
-export const getOauthUrl = async (req, res) => {
+export const getOauthUrlSignUp = async (req, res) => {
     try {
-        const url = await OauthRequest();
+        const url = await OauthRequestSignUp();
+        res.status(200).json({ url })
+    } catch (error) {
+        res.status(500).json({ message: 'Erro ao gerar url para autenticação Oauth' })
+        console.log(error)
+    }
+}
+
+export const getOauthUrlSignIn = async (req, res) => {
+    try {
+        const url = await OauthRequestSignIn();
         res.status(200).json({ url })
     } catch (error) {
         res.status(500).json({ message: 'Erro ao gerar url para autenticação Oauth' })
@@ -18,15 +28,35 @@ export const signUpWithOauth = async (req, res) => {
         const service = await registerWithOauth(code);
 
         const token = jwt.sign({ user: service.subGoogle, }, process.env.SECRET);
-        res.cookie('authencationToken', token, { expires: new Date(Date.now() + 900000), httpOnly: true, secure: true });
+        res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true });
 
-        res.status(201).json({ message: 'Usuário logado com Oauth' });
+        res.status(201).json({ message: 'Usuário registrado com Oauth' });
     } catch (error) {
         if(error.message === 'Usuário existente'){
             return res.status(401).json({ message: 'Usuário existente' })
         };
 
         res.status(500).json({ error: 'Erro ao registrar usuário' });
+        console.log(error);
+    }
+};
+
+export const signInWithOauth = async (req, res) => {
+    const { code } = req.query;
+
+    try {
+        const service = await loginWithOauth(code);
+        
+        const token = jwt.sign({ user: service.subGoogle, }, process.env.SECRET);
+        res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true });
+
+        res.status(201).json({ message: 'Usuário logado com Oauth' });
+    } catch (error) {
+        if(error.message === 'Usuário não encontrado'){
+            return res.status(401).json({ message: 'Usuário não encontrado' })
+        }
+
+        res.status(500).json({ error: 'Erro ao fazer login com Oauth' });
         console.log(error);
     }
 }

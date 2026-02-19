@@ -28,7 +28,7 @@ export const findUserByEmail = async (email) => {
 
 export const findUserByOauth = async (sub) => {
     return await User.findOne({ subGoogle: sub })
-        .select('email name subGoogle')
+        .select('subGoogle')
         .lean();
 }
 

@@ -3,13 +3,32 @@ import bcrypt from "bcryptjs";
 import CryptoJS from "crypto-js";
 import { OAuth2Client } from 'google-auth-library'
 
-export const OauthRequest = () => {
+export const OauthRequestSignUp = () => {
     const state =  CryptoJS.SHA256('testGoogle').toString(CryptoJS.enc.Hex);
 
     const client = new OAuth2Client(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_CLIENT_SECRET,
-        process.env.GOOGLE_REDIRECT_URL,
+        process.env.GOOGLE_REDIRECT_URL_SIGNUP,
+    );
+
+    const authorizationUrl = client.generateAuthUrl({
+        access_type: 'offline',
+        state,
+        scope: ['https://www.googleapis.com/auth/userinfo.profile'],
+        include_granted_scopes: true
+    });
+
+    return authorizationUrl
+};
+
+export const OauthRequestSignIn = () => {
+    const state =  CryptoJS.SHA256('testGoogle').toString(CryptoJS.enc.Hex);
+
+    const client = new OAuth2Client(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        process.env.GOOGLE_REDIRECT_URL_SIGNIN,
     );
 
     const authorizationUrl = client.generateAuthUrl({
@@ -26,7 +45,7 @@ export const registerWithOauth = async (code) => {
     const client = new OAuth2Client(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_CLIENT_SECRET,
-        process.env.GOOGLE_REDIRECT_URL,
+        process.env.GOOGLE_REDIRECT_URL_SIGNUP,
     );
 
     const { tokens } = await client.getToken(code)
@@ -44,6 +63,30 @@ export const registerWithOauth = async (code) => {
     }
 
     return await createUserWithOauth(sub, name);
+};
+
+export const loginWithOauth = async (code) => {
+    const client = new OAuth2Client(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        process.env.GOOGLE_REDIRECT_URL_SIGNIN,
+    );
+
+    const { tokens } = await client.getToken(code)
+
+    const ticket = await client.verifyIdToken({
+        idToken: tokens.id_token,
+        audience: process.env.GOOGLE_CLIENT_ID
+    });
+
+    const { sub } = ticket.payload
+
+    const userExists = await findUserByOauth(sub);
+    if (!userExists) {
+        throw new Error('Usuário não encontrado');
+    }
+
+    return userExists;
 }
 
 export const registerUser = async (name, email, password) => {
