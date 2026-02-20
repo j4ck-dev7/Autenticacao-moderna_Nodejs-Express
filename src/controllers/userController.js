@@ -65,7 +65,11 @@ export const signUp = async (req, res) => {
     const { name, email, password } = req.body;
 
     try {
-        await registerUser(name, email, password);
+        const user = await registerUser(name, email, password);
+
+        const token = jwt.sign({ _id: user._id, name: user.name, authenticationType: user.autenticationType }, process.env.SECRET);
+        res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true });
+
         res.status(201).json({ message: 'Usuário registrado com sucesso' });
     } catch (error) {
         if(error.message === 'Email existente') {
@@ -81,7 +85,11 @@ export const signIn = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        await loginUser(email, password);
+        const user = await loginUser(email, password);
+
+        const token = jwt.sign({ _id: user._id, name: user.name, authenticationType: user.autenticationType }, process.env.SECRET);
+        res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true });
+
         res.status(200).json({ message: 'Login bem-sucedido' });
     } catch (error) {
         if(error.message === 'Email ou senha incorretos') {
