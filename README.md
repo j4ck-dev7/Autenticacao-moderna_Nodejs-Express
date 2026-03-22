@@ -1,4 +1,4 @@
-# Login e Register
+# Autenticação Moderna
 
 [![Node.js](https://img.shields.io/badge/Node.js-v22.x-green)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express-5.1-blue)](https://expressjs.com/)
@@ -24,6 +24,7 @@ Desenvolvida com **Node.js + Express + Mongoose + MongoDB** e testada com **Inso
 | bcryptjs           | 3.x.x   | Hash de senhas               |
 | joi                | 7.x.x   | Validação de entrada         |
 | cookie-parser      | 1.x.x   | Leitura de cookies           |
+| google-auth-library| 1.x.x   | Oauth2                       |
 
 ## ⚙️ Instalação
 
