@@ -9,7 +9,9 @@ Um projeto simples de login e register, com autenticação com JWT + cookie, cri
 Desenvolvida com **Node.js + Express + Mongoose + MongoDB** e testada com **Insomnia** e **jest**.
 
 - `POST   /app/signUp` → Registro  
-- `POST   /app/signIn` → Login 
+- `POST   /app/signIn` → Login
+- `GET   /api/user/Oauth/google/get/url/signUp` → Registro - Rota para obter o link para o redirecionamento para a página de login com o google
+- `GET   /api/user/Oauth/google/get/url/signIn` → Login - Rota para obter o link para o redirecionamento para a página de login com o google
 
 ## 📦 Tecnologias
 
@@ -25,12 +27,13 @@ Desenvolvida com **Node.js + Express + Mongoose + MongoDB** e testada com **Inso
 | joi                | 7.x.x   | Validação de entrada         |
 | cookie-parser      | 1.x.x   | Leitura de cookies           |
 | google-auth-library| 1.x.x   | Oauth2                       |
+| express-rate-limit | 8.x.x   | Rate limiter                 |
 
 ## ⚙️ Instalação
 
 ```bash
 # Clone o repositório
-git clone https://github.com/j4ck-dev7/Login-and-Register-Project
+git clone https://github.com/j4ck-dev7/Autenticacao-moderna_Nodejs-Express
 
 # Instale as dependências
 npm install
@@ -41,8 +44,13 @@ npm install
 PORT=5000
 MONGO_URL=mongodb+srv://username:password@cluster1.mongodb.net/blogapi?retryWrites=true&w=majority&appName=Cluster1
 SECRET=SuaChaveSuperSecretaAqui!
+GOOGLE_CLIENT_ID = Google Cloud
+GOOGLE_CLIENT_SECRET = Google Cloud
+GOOGLE_REDIRECT_URL_SIGNIN = Google Cloud
+GOOGLE_REDIRECT_URL_SIGNUP = Google Cloud
 ```
 ## 🔐 Autenticação
+### Autenticação com email e senha
 1. Criar usuário
    ```http
    POST http://localhost:5000/app/signUp
@@ -65,6 +73,32 @@ SECRET=SuaChaveSuperSecretaAqui!
      "password": "user123",
    }
    ```
+### Autenticação com Oauth2
+1. Criar usuário com Oauth2
+   Obter o link para autenticar com o google
+   ```http
+   POST http://localhost:5000/api/user/Oauth/google/get/url/signUp
+   Content-Type: application/json
+   
+   {
+     "url": "url para redirecionar á página de login com o google"
+   }
+   ```
+
+2. Logar usuário com Oauth2
+   Obter o link para autenticar com o google
+   ```http
+   POST http://localhost:5000/api/user/Oauth/google/get/url/signIn
+   Content-Type: application/json
+   
+   {
+     "url": "url para redirecionar á página de login com o google"
+   }
+   ```
+
+## 🔐 Proteções
+1. Rate-limit com express-rate-limit para proteção à ataques de força bruta, Dos/DDoS, Scraping e Abuso de API
+2. Proteção na rota principal, pode ser acessado apenas quando autenticado
 
 ## 📋 Testes Unitários
 Os testes unitários foram aplicados nas seguintes camadas e módulos:
