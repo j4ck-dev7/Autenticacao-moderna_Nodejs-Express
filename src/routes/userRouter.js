@@ -13,5 +13,6 @@ router.get('/Oauth/google/signIn', rateLimit.Oauth2AuthenticationLimit, userCont
 router.get('/main', rateLimit.mainPageLimit, Auth, userController.mainPage);
 router.post('/signUp', rateLimit.aunteticacaoLimit, userController.signUp);
 router.post('/signIn', rateLimit.aunteticacaoLimit, userController.signIn);
+router.post('/change-password', Auth, rateLimit.aunteticacaoLimit, userController.changePassword);
 
 export default router;
