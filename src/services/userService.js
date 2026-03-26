@@ -1,4 +1,4 @@
-import { findUserByEmail, VerifyEmailExists, createUser, findUserByOauth, createUserWithOauth } from "../repositories/userRepository.js";
+import { findUserByEmail, VerifyEmailExists, createUser, findUserByOauth, createUserWithOauth, findUserById, updateUserPassword } from "../repositories/userRepository.js";
 import bcrypt from "bcryptjs";
 import CryptoJS from "crypto-js";
 import { OAuth2Client } from 'google-auth-library'
@@ -95,7 +95,7 @@ export const registerUser = async (name, email, password) => {
         throw new Error('Email existente');
     }
 
-    const passwordHash = bcrypt.hashSync(password);
+    const passwordHash = await bcrypt.hashSync(password);
 
     return await createUser(name, email, passwordHash);
 }
@@ -113,4 +113,26 @@ export const loginUser = async (email, password) => {
     }
 
     return user;
+}
+
+export const resetPassword = async (id, newPassword, confirmPassword, password) => {
+    const findUser = await findUserById(id);
+    if(!findUser) {
+        throw new Error('Usuário não encontrado');
+    };
+
+    const passwordMatch = await bcrypt.compare(password, findUser.password);
+    if (!passwordMatch) {
+        throw new Error('Senha incorreta');
+    };
+
+    if (newPassword !== confirmPassword) {
+        throw new Error('As senhas não coincidem');
+    };
+
+    const newPasswordHash = await bcrypt.hashSync(newPassword);
+
+    const updatePassword = await updateUserPassword(id, newPasswordHash)
+    
+    return updatePassword;
 }
