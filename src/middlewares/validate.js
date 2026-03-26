@@ -2,31 +2,83 @@
 import joi from 'joi';
 
 // Validação do login
-export const signInValidate = (data) => {
-    const schema = joi.object({
-        name: joi.string().required().min(3).max(50),
-        email: joi.string().required().min(13).max(50),
-        password: joi.string().required().min(8).max(100),
-    })
+const signInValidateSchema = joi.object({
+    name: joi.string().required().min(3).max(50),
+    email: joi.string().required().min(13).max(50),
+    password: joi.string().required().min(8).max(100),
+});
 
-    return schema.validate(data)
+export const signInValidate = (req, res, next) => {
+    const { password, email } = req.body;
+    const data = { password, email };
+
+    const { error } = signInValidateSchema.validate(data);
+
+    switch(error?.details[0].message) {
+        case 'name is required': 
+            return res.status(400).json({ error: 'O nome é obrigatório' });
+        case 'email is required': 
+            return res.status(400).json({ error: 'O email é obrigatório' });
+        case 'password is required': 
+            return res.status(400).json({ error: 'A senha é obrigatória' });
+        case 'name length must be at least 3 characters long':
+            return res.status(400).json({ error: 'O nome deve conter no mínimo 3 caracteres' });
+        case 'name length must be less than or equal to 50 characters long':
+            return res.status(400).json({ error: 'O nome deve conter no máximo 50 caracteres' });
+        case 'email length must be at least 13 characters long':
+            return res.status(400).json({ error: 'O email deve conter no mínimo 13 caracteres' });
+        case 'email length must be less than or equal to 50 characters long':
+            return res.status(400).json({ error: 'O email deve conter no máximo 50 caracteres' });
+        case 'password length must be at least 8 characters long':
+            return res.status(400).json({ error: 'A senha deve conter no mínimo 8 caracteres' });
+        case 'password length must be less than or equal to 100 characters long':
+            return res.status(400).json({ error: 'A senha deve conter no máximo 100 caracteres' });
+        default:
+            next();
+    }
 }
 
 // Validação do register
-export const signUpValidate = (data) => {
-    const schema = joi.object({
-        name: joi.string().required().min(3).max(50),
-        email: joi.string().required().min(13).max(50),
-        password: joi.string().required().min(8).max(100),
-    })
+const signUpValidateSchema = joi.object({
+    name: joi.string().required().min(3).max(50),
+    email: joi.string().required().min(13).max(50),
+    password: joi.string().required().min(8).max(100),
+})
 
-    return schema.validate(data)
-}
+export const signUpValidate = (req, res, next) => {
+    const { name, email, password } = req.body;
+    const data = { name, email, password };
+
+    const { error } = signUpValidateSchema.validate(data);
+   
+    switch(error?.details[0].message) {
+        case 'name is required': 
+            return res.status(400).json({ error: 'O nome é obrigatório' });
+        case 'email is required': 
+            return res.status(400).json({ error: 'O email é obrigatório' });
+        case 'password is required': 
+            return res.status(400).json({ error: 'A senha é obrigatória' });
+        case 'name length must be at least 3 characters long':
+            return res.status(400).json({ error: 'O nome deve conter no mínimo 3 caracteres' });
+        case 'name length must be less than or equal to 50 characters long':
+            return res.status(400).json({ error: 'O nome deve conter no máximo 50 caracteres' });
+        case 'email length must be at least 13 characters long':
+            return res.status(400).json({ error: 'O email deve conter no mínimo 13 caracteres' });
+        case 'email length must be less than or equal to 50 characters long':
+            return res.status(400).json({ error: 'O email deve conter no máximo 50 caracteres' });
+        case 'password length must be at least 8 characters long':
+            return res.status(400).json({ error: 'A senha deve conter no mínimo 8 caracteres' });
+        case 'password length must be less than or equal to 100 characters long':
+            return res.status(400).json({ error: 'A senha deve conter no máximo 100 caracteres' });
+        default:
+            next();
+    }
+};
 
 // Validação de mudança de senha 
 const changePasswordValidateSchema = joi.object({
     password: joi.string().required().min(8).max(100),
-    newPassword: joi.string().required().min(8).max(100),
+    newPassword: joi.string().min(8).max(100).required(),
     confirmNewPassword: joi.any().valid(joi.ref('newPassword')).required()
 });
 
@@ -35,10 +87,25 @@ export const changePasswordValidate = (req, res, next) => {
     const data = { password, newPassword, confirmNewPassword };
 
     const { error } = changePasswordValidateSchema.validate(data);
-
-    if (error) {
-        return res.status(400).json({ error: error.details[0].message });
+   
+    switch(error?.details[0].message) {
+        case 'password is required': 
+            return res.status(400).json({ error: 'A senha atual é obrigatória' });
+        case 'newPassword is required': 
+            return res.status(400).json({ error: 'A nova senha é obrigatória' });
+        case 'confirmNewPassword is required': 
+            return res.status(400).json({ error: 'A confirmação da nova senha é obrigatória' });
+        case 'confirmNewPassword must be [ref:newPassword]': 
+            return res.status(400).json({ error: 'A confirmação da nova senha deve ser igual a nova senha' });
+        case 'password length must be at least 8 characters long':
+            return res.status(400).json({ error: 'A senha atual deve conter no mínimo 8 caracteres' });
+        case 'password length must be less than or equal to 100 characters long':
+            return res.status(400).json({ error: 'A senha atual deve conter no máximo 100 caracteres' });
+        case 'newPassword length must be at least 8 characters long':
+            return res.status(400).json({ error: 'A nova senha deve conter no mínimo 8 caracteres' });
+        case 'newPassword length must be less than or equal to 100 characters long':
+            return res.status(400).json({ error: 'A nova senha deve conter no máximo 100 caracteres' });
+        default:
+            next();
     }
-
-    next();
 };

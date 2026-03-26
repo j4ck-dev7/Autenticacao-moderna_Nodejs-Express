@@ -130,6 +130,10 @@ export const resetPassword = async (id, newPassword, confirmPassword, password) 
         throw new Error('As senhas não coincidem');
     };
 
+    if (password === newPassword) {
+        throw new Error('A nova senha deve ser diferente da senha atual');
+    }
+
     const newPasswordHash = await bcrypt.hashSync(newPassword);
 
     const updatePassword = await updateUserPassword(id, newPasswordHash)

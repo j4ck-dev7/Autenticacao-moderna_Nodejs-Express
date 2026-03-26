@@ -109,7 +109,12 @@ export const changePassword = async (req, res) => {
         const updatePassword = await resetPassword(_id, newPassword, confirmNewPassword, password);
         res.status(201).json({ message: 'Senha alterada com sucesso' });
     } catch (error) {
-        if(error.message === 'Senha incorreta' || error.message === 'As senhas não coincidem' || error.message === 'Usuário não encontrado') {
+        if(
+            error.message === 'Senha incorreta' || 
+            error.message === 'As senhas não coincidem' || 
+            error.message === 'Usuário não encontrado' || 
+            error.message === 'A nova senha deve ser diferente da senha atual'
+        ) {
             return res.status(401).json({ error: error.message });
         }
 
