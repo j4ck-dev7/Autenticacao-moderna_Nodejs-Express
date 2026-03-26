@@ -38,3 +38,9 @@ export const VerifyEmailExists = async (email) => {
         .lean();
     ;
 }
+
+export const findUserById = async (id) => {
+    return await User.findById(id)
+        .select('password')
+        .lean();
+}
