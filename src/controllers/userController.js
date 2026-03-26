@@ -102,14 +102,14 @@ export const signIn = async (req, res) => {
 };
 
 export const changePassword = async (req, res) => {
-    const { id } = req.user;
+    const { _id } = req.user;
     const { password, newPassword, confirmNewPassword } = req.body;
 
     try {
-        const updatePassword = await resetPassword(id, newPassword, confirmNewPassword, password);
+        const updatePassword = await resetPassword(_id, newPassword, confirmNewPassword, password);
         res.status(201).json({ message: 'Senha alterada com sucesso' });
     } catch (error) {
-        if(error.message === 'Senha incorreta' || error.message === 'As senhas não coincidem') {
+        if(error.message === 'Senha incorreta' || error.message === 'As senhas não coincidem' || error.message === 'Usuário não encontrado') {
             return res.status(401).json({ error: error.message });
         }
 

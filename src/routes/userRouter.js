@@ -3,6 +3,7 @@ import express from 'express';
 import * as userController from '../controllers/userController.js';
 import { Auth } from '../middlewares/authMiddleware.js';
 import * as rateLimit from '../middlewares/rateLimit.js';
+import * as validate from '../middlewares/validate.js';
 
 const router = express.Router();
 
@@ -13,6 +14,6 @@ router.get('/Oauth/google/signIn', rateLimit.Oauth2AuthenticationLimit, userCont
 router.get('/main', rateLimit.mainPageLimit, Auth, userController.mainPage);
 router.post('/signUp', rateLimit.aunteticacaoLimit, userController.signUp);
 router.post('/signIn', rateLimit.aunteticacaoLimit, userController.signIn);
-router.post('/change-password', Auth, rateLimit.aunteticacaoLimit, userController.changePassword);
+router.post('/change-password', rateLimit.aunteticacaoLimit, Auth, validate.changePasswordValidate, userController.changePassword);
 
 export default router;
