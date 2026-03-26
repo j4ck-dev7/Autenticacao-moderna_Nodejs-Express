@@ -1,4 +1,4 @@
-import { registerUser, loginUser, registerWithOauth, OauthRequestSignIn, OauthRequestSignUp, loginWithOauth } from "../services/userService.js";
+import { registerUser, loginUser, registerWithOauth, OauthRequestSignIn, OauthRequestSignUp, loginWithOauth, resetPassword } from "../services/userService.js";
 import jwt from 'jsonwebtoken'
 
 export const getOauthUrlSignUp = async (req, res) => {
@@ -100,6 +100,23 @@ export const signIn = async (req, res) => {
         console.log(error);
     }
 };
+
+export const changePassword = async (req, res) => {
+    const { id } = req.user;
+    const { password, newPassword, confirmNewPassword } = req.body;
+
+    try {
+        const updatePassword = await resetPassword(id, newPassword, confirmNewPassword, password);
+        res.status(200).json({ message: 'Senha alterada com sucesso' });
+    } catch (error) {
+        if(error.message === 'Senha incorreta' || error.message === 'As senhas não coincidem') {
+            return res.status(401).json({ error: error.message });
+        }
+
+        res.status(500).json({ error: 'Erro ao alterar senha' });
+        console.log(error);
+    }
+}
 
 export const mainPage = (req, res) => {
     try {
