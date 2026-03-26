@@ -44,3 +44,7 @@ export const findUserById = async (id) => {
         .select('password')
         .lean();
 }
+
+export const updateUserPassword = async (id, newPassword) => {
+    return await User.findByIdAndUpdate(id, { password: newPassword });
+};
