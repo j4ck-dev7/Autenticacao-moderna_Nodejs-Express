@@ -34,8 +34,10 @@ export const signInValidate = (req, res, next) => {
             return res.status(400).json({ error: 'O email não pode ser vazio' });
         case '"password" is not allowed to be empty':
             return res.status(400).json({ error: 'A senha não pode ser vazia' });
+        case undefined: 
+            return next();
         default:
-            next();
+            return res.status(400).json({ error: 'Erro de validação desconhecido' });
     }
 }
 
@@ -81,8 +83,10 @@ export const signUpValidate = (req, res, next) => {
             return res.status(400).json({ error: 'O email não pode ser vazio' });
         case '"password" is not allowed to be empty':
             return res.status(400).json({ error: 'A senha não pode ser vazia' });
+        case undefined:
+            return next();
         default:
-            next();
+            return res.status(400).json({ error: 'Erro de validação desconhecido' });
     }
 };
 
@@ -126,7 +130,9 @@ export const changePasswordValidate = (req, res, next) => {
             return res.status(400).json({ error: 'A nova senha não pode ser vazia' });
         case '"confirmNewPassword" is not allowed to be empty':
             return res.status(400).json({ error: 'A confirmação da nova senha não pode ser vazia' });
+        case undefined:
+            return next();
         default:
-            next();
+            return res.status(400).json({ error: 'Erro de validação desconhecido' });
     }
 };
