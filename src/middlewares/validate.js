@@ -15,9 +15,9 @@ export const signInValidate = (req, res, next) => {
 
     switch(error?.details[0].message) {
         case '"email" is required': 
-            return res.status(400).json({ error: 'O email é obrigatório' });
+            return res.status(400).json({ error: 'Preencha os campos obrigatórios' });
         case '"password" is required': 
-            return res.status(400).json({ error: 'A senha é obrigatória' });
+            return res.status(400).json({ error: 'Preencha os campos obrigatórios' });
         case '"email" length must be at least 13 characters long':
             return res.status(400).json({ error: 'O email deve conter no mínimo 13 caracteres' });
         case '"email" length must be less than or equal to 50 characters long':
@@ -31,9 +31,9 @@ export const signInValidate = (req, res, next) => {
         case '"email" must be a valid email':
             return res.status(400).json({ error: 'O email deve ser um email válido' });
         case '"email" is not allowed to be empty':
-            return res.status(400).json({ error: 'O email não pode ser vazio' });
+            return res.status(400).json({ error: 'Preencha os campos obrigatórios' });
         case '"password" is not allowed to be empty':
-            return res.status(400).json({ error: 'A senha não pode ser vazia' });
+            return res.status(400).json({ error: 'Preencha os campos obrigatórios' });
         case undefined: 
             return next();
         default:
@@ -56,11 +56,11 @@ export const signUpValidate = (req, res, next) => {
    
     switch(error?.details[0].message) {
         case '"name" is required': 
-            return res.status(400).json({ error: 'O nome é obrigatório' });
+            return res.status(400).json({ error: 'Preencha os campos obrigatórios' });
         case '"email" is required': 
-            return res.status(400).json({ error: 'O email é obrigatório' });
+            return res.status(400).json({ error: 'Preencha os campos obrigatórios' });
         case '"password" is required': 
-            return res.status(400).json({ error: 'A senha é obrigatória' });
+            return res.status(400).json({ error: 'Preencha os campos obrigatórios' });
         case '"name" length must be at least 3 characters long':
             return res.status(400).json({ error: 'O nome deve conter no mínimo 3 caracteres' });
         case '"name" length must be less than or equal to 50 characters long':
@@ -78,11 +78,11 @@ export const signUpValidate = (req, res, next) => {
         case '"email" must be a valid email':
             return res.status(400).json({ error: 'O email deve ser um email válido' });
         case '"name" is not allowed to be empty':
-            return res.status(400).json({ error: 'O nome não pode ser vazio' });
+            return res.status(400).json({ error: 'Preencha os campos obrigatórios' });
         case '"email" is not allowed to be empty':
-            return res.status(400).json({ error: 'O email não pode ser vazio' });
+            return res.status(400).json({ error: 'Preencha os campos obrigatórios' });
         case '"password" is not allowed to be empty':
-            return res.status(400).json({ error: 'A senha não pode ser vazia' });
+            return res.status(400).json({ error: 'Preencha os campos obrigatórios' });
         case undefined:
             return next();
         default:
@@ -105,31 +105,29 @@ export const changePasswordValidate = (req, res, next) => {
    
     switch(error?.details[0].message) {
         case '"password" is required': 
-            return res.status(400).json({ error: 'A senha atual é obrigatória' });
+            return res.status(400).json({ error: 'Preencha os campos obrigatórios' });
         case '"newPassword" is required': 
-            return res.status(400).json({ error: 'A nova senha é obrigatória' });
+            return res.status(400).json({ error: 'Preencha os campos obrigatórios' });
         case '"confirmNewPassword" is required': 
-            return res.status(400).json({ error: 'A confirmação da nova senha é obrigatória' });
+            return res.status(400).json({ error: 'Preencha os campos obrigatórios' });
         case '"confirmNewPassword" must be [ref:newPassword]': 
-            return res.status(400).json({ error: 'A confirmação da nova senha deve ser igual a nova senha' });
-        case '"password" length must be at least 8 characters long':
-            return res.status(400).json({ error: 'A senha atual deve conter no mínimo 8 caracteres' });
+            return res.status(400).json({ error: 'As senhas não coincidem' });
         case '"password" length must be less than or equal to 100 characters long':
-            return res.status(400).json({ error: 'A senha atual deve conter no máximo 100 caracteres' });
+            return res.status(400).json({ error: 'As senhas não coincidem' });
         case '"newPassword" length must be at least 8 characters long':
             return res.status(400).json({ error: 'A nova senha deve conter no mínimo 8 caracteres' });
         case '"newPassword" length must be less than or equal to 100 characters long':
             return res.status(400).json({ error: 'A nova senha deve conter no máximo 100 caracteres' });
         case '"password" must only contain alpha-numeric characters':
-            return res.status(400).json({ error: 'A senha atual deve conter apenas caracteres alfanuméricos' });
+            return res.status(400).json({ error: 'Credenciais inválidas' });
+        case '"password" is not allowed to be empty':
+            return res.status(400).json({ error: 'Preencha os campos obrigatórios' });
+        case '"newPassword" is not allowed to be empty':
+            return res.status(400).json({ error: 'Preencha os campos obrigatórios' });
+        case '"confirmNewPassword" is not allowed to be empty':
+            return res.status(400).json({ error: 'Preencha os campos obrigatórios' });
         case '"newPassword" must only contain alpha-numeric characters':
             return res.status(400).json({ error: 'A nova senha deve conter apenas caracteres alfanuméricos' });
-        case '"password" is not allowed to be empty':
-            return res.status(400).json({ error: 'A senha atual não pode ser vazia' });
-        case '"newPassword" is not allowed to be empty':
-            return res.status(400).json({ error: 'A nova senha não pode ser vazia' });
-        case '"confirmNewPassword" is not allowed to be empty':
-            return res.status(400).json({ error: 'A confirmação da nova senha não pode ser vazia' });
         case undefined:
             return next();
         default:
