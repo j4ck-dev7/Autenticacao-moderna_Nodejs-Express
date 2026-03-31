@@ -143,7 +143,7 @@ export const resetPassword = async (id, newPassword, confirmPassword, password) 
 
     const newPasswordHash = await bcrypt.hashSync(newPassword);
 
-    const updatePassword = await updateUserPassword(id, newPasswordHash)
+    const updatePassword = await updateUserPassword(id, newPasswordHash);
     
     return updatePassword;
 }

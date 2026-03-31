@@ -102,6 +102,7 @@ export const signIn = async (req, res) => {
 };
 
 export const changePassword = async (req, res) => {
+    const inicio = Date.now();
     const { _id } = req.user;
     const { password, newPassword, confirmNewPassword } = req.body;
     const { ip } = req;
@@ -119,8 +120,13 @@ export const changePassword = async (req, res) => {
             return res.status(401).json({ error: error.message });
         }
 
+        const duracao = Date.now() - inicio;
+        logger.error('Erro ao alterar senha', error, {
+            usuarioId: _id,
+            duracao
+        });
+
         res.status(500).json({ error: 'Erro ao alterar senha' });
-        console.log(error);
     }
 }
 
