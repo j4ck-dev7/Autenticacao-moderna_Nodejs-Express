@@ -1,13 +1,25 @@
-import express from 'express'
-import cookieParser from 'cookie-parser'
-import userRouter from './routes/userRouter.js'
+import express from 'express';
+import cookieParser from 'cookie-parser';
+import userRouter from './routes/userRouter.js';
+import { loggerMiddleware } from './middlewares/loggerMiddleware.js';
 
-const app = express()
+const app = express();
 
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
-app.use(cookieParser())
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(loggerMiddleware);
 
-app.use('/api/user', userRouter)
+app.use((err, req, res, next) => {
+    logger.error('Erro na aplicação', err, {
+        metodo: req.method,
+        rota: req.path,
+        usuarioId: req.user._id || 'Desconecido'
+    });
 
-export default app
+    res.status(500).json({ error: 'Erro interno do servidor' });
+});
+
+app.use('/api/user', userRouter);
+
+export default app;
