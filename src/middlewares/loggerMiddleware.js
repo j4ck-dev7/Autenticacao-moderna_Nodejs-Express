@@ -1,0 +1,34 @@
+import { logger } from "../config/logger";
+
+export const loggerMiddleware = (req, res, next) => {
+    const inicio = Date.now();
+
+    const originalSend = res.send 
+    res.send = function(data) {
+        const duracao = Date.now() - inicio;
+
+        logger.info('Requisição HTTP', {
+            metodo: req.method,
+            rota: req.path,
+            statusCode: res.statusCode,
+            duracao: `${duracao}ms`,
+            usuarioId: req.user._id || 'Desconhecido',
+            ip: req.ip,
+            userAgent: req.get('user-agent')
+        });
+
+        if(res.statusCode >= 400) {
+            logger.warn('Erro na requisição', {
+                metodo: req.method,
+                rota: req.path,
+                statusCode: res.statusCode,
+                corpo: data,
+                usuarioId: req.user._id || 'Desconhecido',
+            });
+        }
+
+        return originalSend.call(this, data);
+    };
+
+    next();
+}
