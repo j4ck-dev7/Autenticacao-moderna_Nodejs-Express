@@ -53,7 +53,7 @@ export const logger = winston.createLogger({
     ],
     exceptionHandlers: [ // Exceções não tratadas, como erros de programação ou falhas inesperadas
         new winston.transports.File({
-            filename: 'logs/exceptions.log',
+            filename: 'logs/seguranca/exceptions.log',
             format: winston.format.json(), // Será necessário trocar o formato para algo mais legível, como winston.format.simple() ou winston.format.printf()
             maxsize: 1000000,
             maxFiles: 5,
@@ -61,7 +61,7 @@ export const logger = winston.createLogger({
     ],
     rejectionHandlers: [ // Rejeições de promessas não tratadas, como falhas em operações assíncronas
         new winston.transports.File({
-            filename: 'logs/rejections.log',
+            filename: 'logs/tratadas/rejections.log',
             format: winston.format.json(), // Será necessário trocar o formato para algo mais legível, como winston.format.simple() ou winston.format.printf()
             maxsize: 1000000,
             maxFiles: 5,
