@@ -104,9 +104,10 @@ export const signIn = async (req, res) => {
 export const changePassword = async (req, res) => {
     const { _id } = req.user;
     const { password, newPassword, confirmNewPassword } = req.body;
+    const { ip } = req;
 
     try {
-        const updatePassword = await resetPassword(_id, newPassword, confirmNewPassword, password);
+        const updatePassword = await resetPassword(_id, newPassword, confirmNewPassword, password, ip);
         res.status(201).json({ message: 'Senha alterada com sucesso' });
     } catch (error) {
         if(

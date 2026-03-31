@@ -2,6 +2,7 @@ import { findUserByEmail, VerifyEmailExists, createUser, findUserByOauth, create
 import bcrypt from "bcryptjs";
 import CryptoJS from "crypto-js";
 import { OAuth2Client } from 'google-auth-library'
+import { logger } from "../config/logger.js";
 
 export const OauthRequestSignUp = () => {
     const state =  CryptoJS.SHA256('testGoogle').toString(CryptoJS.enc.Hex);
@@ -116,6 +117,8 @@ export const loginUser = async (email, password) => {
 }
 
 export const resetPassword = async (id, newPassword, confirmPassword, password) => {
+    logger.debug('Iniciando processo de reset de senha', { usuarioId: id });
+
     const findUser = await findUserById(id);
     if(!findUser) {
         throw new Error('Usuário não encontrado');
@@ -123,6 +126,10 @@ export const resetPassword = async (id, newPassword, confirmPassword, password) 
 
     const passwordMatch = await bcrypt.compare(password, findUser.password);
     if (!passwordMatch) {
+        logger.warn('Tentativa de reset de senha com senha atual incorreta', {
+            usuarioId: id, 
+            ip
+        });
         throw new Error('Senha incorreta');
     };
 
