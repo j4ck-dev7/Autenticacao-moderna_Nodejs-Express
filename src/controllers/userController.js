@@ -17,8 +17,13 @@ export const getOauthUrlSignIn = async (req, res) => {
         const url = await OauthRequestSignIn();
         res.status(200).json({ url })
     } catch (error) {
+        const duracao = Date.now() - inicio;
+        logger.error('Erro ao gerar url para autenticação Oauth', error, {
+            usuarioId: 'Desconecido',
+            duracao
+        });
+
         res.status(500).json({ message: 'Erro ao gerar url para autenticação Oauth' })
-        console.log(error)
     }
 }
 
