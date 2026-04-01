@@ -4,7 +4,7 @@ import CryptoJS from "crypto-js";
 import { OAuth2Client } from 'google-auth-library'
 import { logger } from "../config/logger.js";
 
-export const OauthRequestSignUp = () => {
+export const OauthRequestSignUp = (ip) => {
     logger.debug('Iniciando processo de geração de url para autenticação Oauth', { 
         usuarioId: 'Desconecido',
         ip
@@ -28,7 +28,7 @@ export const OauthRequestSignUp = () => {
     return authorizationUrl
 };
 
-export const OauthRequestSignIn = () => {
+export const OauthRequestSignIn = (ip) => {
     logger.debug('Iniciando processo de geração de url para autenticação Oauth', { 
         usuarioId: 'Desconecido',
         ip
@@ -52,7 +52,7 @@ export const OauthRequestSignIn = () => {
     return authorizationUrl
 };
 
-export const registerWithOauth = async (code) => {
+export const registerWithOauth = async (code, ip) => {
     logger.debug('Iniciando processo de registro com Oauth', {
         usuarioId: 'Desconecido',
         ip
@@ -81,7 +81,7 @@ export const registerWithOauth = async (code) => {
     return await createUserWithOauth(sub, name);
 };
 
-export const loginWithOauth = async (code) => {
+export const loginWithOauth = async (code, ip) => {
     logger.debug('Iniciando processo de login com Oauth', {
         usuarioId: 'Desconecido',
         ip
@@ -110,8 +110,8 @@ export const loginWithOauth = async (code) => {
     return userExists;
 }
 
-export const registerUser = async (name, email, password) => {
-    logger.debug('Iniciando processo de registro de usuário', { email });
+export const registerUser = async (name, email, password, ip) => {
+    logger.debug('Iniciando processo de registro de usuário', { email, ip });
 
     const emailExists = await VerifyEmailExists(email);
     if (emailExists) {
@@ -127,12 +127,19 @@ export const registerUser = async (name, email, password) => {
     return await createUser(name, email, passwordHash);
 }
 
-export const loginUser = async (email, password) => {
-    logger.debug('Iniciando processo de login', { email });
+export const loginUser = async (email, password, ip) => {
+    logger.debug('Iniciando processo de login', {
+        usuarioId: 'Desconecido',
+        ip
+    });
 
     const user = await findUserByEmail(email);
     if (!user) {
-        logger.warn('Tentativa de login com email não registrado', { email });
+        logger.warn('Tentativa de login com email não registrado', { 
+            usuarioId: 'Desconecido',
+            ip
+        });
+        
         throw new Error('Email ou senha incorretos');
     }
 
