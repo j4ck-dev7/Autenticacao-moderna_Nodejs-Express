@@ -3,6 +3,8 @@ import jwt from 'jsonwebtoken';
 import { logger } from "../config/logger.js";
 
 export const getOauthUrlSignUp = async (req, res) => {
+    const inicio = Date.now();
+
     try {
         const url = await OauthRequestSignUp();
 
@@ -25,8 +27,16 @@ export const getOauthUrlSignUp = async (req, res) => {
 }
 
 export const getOauthUrlSignIn = async (req, res) => {
+    const inicio = Date.now();
+
     try {
         const url = await OauthRequestSignIn();
+
+        logger.debug('Url para autenticação Oauth gerada com sucesso', { 
+            usuarioId: 'Desconecido',
+            ip: req.ip
+        });
+
         res.status(200).json({ url })
     } catch (error) {
         const duracao = Date.now() - inicio;
@@ -41,12 +51,20 @@ export const getOauthUrlSignIn = async (req, res) => {
 
 export const signUpWithOauth = async (req, res) => {
     const { code } = req.query
+    const inicio = Date.now();
     
     try {
         const service = await registerWithOauth(code);
 
         const token = jwt.sign({ user: service.subGoogle, }, process.env.SECRET);
         res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true });
+
+        const duracao = Date.now() - inicio;
+        logger.info('Login bem-sucedido', {
+            usuarioId: service.subGoogle,
+            ip,
+            duracao
+        });
 
         res.status(201).json({ message: 'Usuário registrado com Oauth' });
     } catch (error) {
@@ -66,12 +84,20 @@ export const signUpWithOauth = async (req, res) => {
 
 export const signInWithOauth = async (req, res) => {
     const { code } = req.query;
+    const inicio = Date.now();
 
     try {
         const service = await loginWithOauth(code);
         
         const token = jwt.sign({ user: service.subGoogle, }, process.env.SECRET);
         res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true });
+
+        const duracao = Date.now() - inicio;
+        logger.info('Login bem-sucedido', {
+            usuarioId: service.subGoogle,
+            ip,
+            duracao
+        });
 
         res.status(201).json({ message: 'Usuário logado com Oauth' });
     } catch (error) {
@@ -92,12 +118,20 @@ export const signInWithOauth = async (req, res) => {
 
 export const signUp = async (req, res) => {
     const { name, email, password } = req.body;
+    const inicio = Date.now();
 
     try {
         const user = await registerUser(name, email, password);
 
         const token = jwt.sign({ _id: user._id, name: user.name, authenticationType: user.autenticationType }, process.env.SECRET);
         res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true });
+
+        const duracao = Date.now() - inicio;
+        logger.info('Login bem-sucedido', {
+            usuarioId: user._id,
+            ip,
+            duracao
+        });
 
         res.status(201).json({ message: 'Usuário registrado com sucesso' });
     } catch (error) {
@@ -117,12 +151,20 @@ export const signUp = async (req, res) => {
 
 export const signIn = async (req, res) => {
     const { email, password } = req.body;
+    const inicio = Date.now();
 
     try {
         const user = await loginUser(email, password);
 
         const token = jwt.sign({ _id: user._id, name: user.name, authenticationType: user.autenticationType }, process.env.SECRET);
         res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true });
+
+        const duracao = Date.now() - inicio;
+        logger.info('Login bem-sucedido', {
+            usuarioId: user._id,
+            ip,
+            duracao
+        });
 
         res.status(200).json({ message: 'Login bem-sucedido' });
     } catch (error) {
@@ -148,6 +190,13 @@ export const changePassword = async (req, res) => {
 
     try {
         const updatePassword = await resetPassword(newPassword, confirmNewPassword, password, _id, ip);
+
+        logger.info('Senha alterada com sucesso', {
+            usuarioId: _id,
+            ip,
+            duracao: Date.now() - inicio
+        });
+
         res.status(201).json({ message: 'Senha alterada com sucesso' });
     } catch (error) {
         if(
@@ -170,7 +219,15 @@ export const changePassword = async (req, res) => {
 }
 
 export const mainPage = (req, res) => {
+    const inicio = Date.now();
+
     try {
+        logger.info('Página principal acessada com sucesso', {
+            usuarioId: req.user._id,
+            ip,
+            duracao: Date.now() - inicio
+        });
+
         res.status(200).json({ message: 'Página principal acessada com sucesso' })
     } catch (error) {
         const duracao = Date.now() - inicio;
