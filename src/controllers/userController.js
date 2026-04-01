@@ -37,8 +37,13 @@ export const signUpWithOauth = async (req, res) => {
             return res.status(401).json({ message: 'Usuário existente' })
         };
 
+        const duracao = Date.now() - inicio;
+        logger.error('Erro ao registrar usuário com Oauth', error, {
+            usuarioId: service?.subGoogle || 'Desconecido',
+            duracao
+        });
+
         res.status(500).json({ error: 'Erro ao registrar usuário' });
-        console.log(error);
     }
 };
 
