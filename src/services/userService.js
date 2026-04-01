@@ -5,6 +5,11 @@ import { OAuth2Client } from 'google-auth-library'
 import { logger } from "../config/logger.js";
 
 export const OauthRequestSignUp = () => {
+    logger.debug('Iniciando processo de geração de url para autenticação Oauth', { 
+        usuarioId: 'Desconecido',
+        ip
+    });
+
     const state =  CryptoJS.SHA256('testGoogle').toString(CryptoJS.enc.Hex);
 
     const client = new OAuth2Client(
@@ -24,6 +29,11 @@ export const OauthRequestSignUp = () => {
 };
 
 export const OauthRequestSignIn = () => {
+    logger.debug('Iniciando processo de geração de url para autenticação Oauth', { 
+        usuarioId: 'Desconecido',
+        ip
+    });
+
     const state =  CryptoJS.SHA256('testGoogle').toString(CryptoJS.enc.Hex);
 
     const client = new OAuth2Client(
@@ -43,6 +53,11 @@ export const OauthRequestSignIn = () => {
 };
 
 export const registerWithOauth = async (code) => {
+    logger.debug('Iniciando processo de registro com Oauth', {
+        usuarioId: 'Desconecido',
+        ip
+    });
+
     const client = new OAuth2Client(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_CLIENT_SECRET,
@@ -67,6 +82,11 @@ export const registerWithOauth = async (code) => {
 };
 
 export const loginWithOauth = async (code) => {
+    logger.debug('Iniciando processo de login com Oauth', {
+        usuarioId: 'Desconecido',
+        ip
+    });
+
     const client = new OAuth2Client(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_CLIENT_SECRET,

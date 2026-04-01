@@ -5,11 +5,18 @@ import { logger } from "../config/logger.js";
 export const getOauthUrlSignUp = async (req, res) => {
     try {
         const url = await OauthRequestSignUp();
+
+        logger.debug('Url para autenticação Oauth gerada com sucesso', { 
+            usuarioId: 'Desconecido',
+            ip: req.ip
+        });
+
         res.status(200).json({ url })
     } catch (error) {
         const duracao = Date.now() - inicio;
         logger.error('Erro ao gerar url para autenticação Oauth', error, {
             usuarioId: 'Desconecido',
+            ip: req.ip,
             duracao
         });
 
