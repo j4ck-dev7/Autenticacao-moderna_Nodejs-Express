@@ -102,14 +102,18 @@ export const registerUser = async (name, email, password) => {
 }
 
 export const loginUser = async (email, password) => {
+    logger.debug('Iniciando processo de login', { email });
+
     const user = await findUserByEmail(email);
     if (!user) {
+        logger.warn('Tentativa de login com email não registrado', { email });
         throw new Error('Email ou senha incorretos');
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (!passwordMatch) {
+        logger.warn('Tentativa de login com senha incorreta', { email });
         throw new Error('Email ou senha incorretos');
     }
 
