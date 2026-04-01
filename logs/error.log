@@ -1,1 +1,0 @@
-{"level":"error","message":"Erro ao alterar senha ip is not defined","stack":"ReferenceError: ip is not defined\n    at resetPassword (file:///home/jackson/Documents/Autenticacao-moderna-Nodejs-Express/src/services/userService.js:131:13)\n    at async changePassword (file:///home/jackson/Documents/Autenticacao-moderna-Nodejs-Express/src/controllers/userController.js:112:32)"}
