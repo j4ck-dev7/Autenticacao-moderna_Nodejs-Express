@@ -4,13 +4,14 @@ import { logger } from "../config/logger.js";
 
 export const getOauthUrlSignUp = async (req, res) => {
     const inicio = Date.now();
+    const { ip } = req;
 
     try {
-        const url = await OauthRequestSignUp();
+        const url = await OauthRequestSignUp(ip);
 
         logger.debug('Url para autenticação Oauth gerada com sucesso', { 
             usuarioId: 'Desconecido',
-            ip: req.ip
+            ip
         });
 
         res.status(200).json({ url })
@@ -18,7 +19,7 @@ export const getOauthUrlSignUp = async (req, res) => {
         const duracao = Date.now() - inicio;
         logger.error('Erro ao gerar url para autenticação Oauth', error, {
             usuarioId: 'Desconecido',
-            ip: req.ip,
+            ip,
             duracao
         });
 
@@ -28,13 +29,14 @@ export const getOauthUrlSignUp = async (req, res) => {
 
 export const getOauthUrlSignIn = async (req, res) => {
     const inicio = Date.now();
+    const { ip } = req;
 
     try {
-        const url = await OauthRequestSignIn();
+        const url = await OauthRequestSignIn(ip);
 
         logger.debug('Url para autenticação Oauth gerada com sucesso', { 
             usuarioId: 'Desconecido',
-            ip: req.ip
+            ip
         });
 
         res.status(200).json({ url })
@@ -50,11 +52,12 @@ export const getOauthUrlSignIn = async (req, res) => {
 }
 
 export const signUpWithOauth = async (req, res) => {
-    const { code } = req.query
+    const { code } = req.query;
     const inicio = Date.now();
-    
+    const { ip } = req;
+
     try {
-        const service = await registerWithOauth(code);
+        const service = await registerWithOauth(code, ip);
 
         const token = jwt.sign({ user: service.subGoogle, }, process.env.SECRET);
         res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true });
@@ -85,9 +88,10 @@ export const signUpWithOauth = async (req, res) => {
 export const signInWithOauth = async (req, res) => {
     const { code } = req.query;
     const inicio = Date.now();
+    const { ip } = req;
 
     try {
-        const service = await loginWithOauth(code);
+        const service = await loginWithOauth(code, ip);
         
         const token = jwt.sign({ user: service.subGoogle, }, process.env.SECRET);
         res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true });
@@ -111,7 +115,6 @@ export const signInWithOauth = async (req, res) => {
             duracao
         });
 
-
         res.status(500).json({ error: 'Erro ao fazer login com Oauth' });
     }
 }
@@ -119,9 +122,10 @@ export const signInWithOauth = async (req, res) => {
 export const signUp = async (req, res) => {
     const { name, email, password } = req.body;
     const inicio = Date.now();
+    const { ip } = req;
 
     try {
-        const user = await registerUser(name, email, password);
+        const user = await registerUser(name, email, password, ip);
 
         const token = jwt.sign({ _id: user._id, name: user.name, authenticationType: user.autenticationType }, process.env.SECRET);
         res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true });
@@ -152,9 +156,10 @@ export const signUp = async (req, res) => {
 export const signIn = async (req, res) => {
     const { email, password } = req.body;
     const inicio = Date.now();
+    const { ip } = req;
 
     try {
-        const user = await loginUser(email, password);
+        const user = await loginUser(email, password, ip);
 
         const token = jwt.sign({ _id: user._id, name: user.name, authenticationType: user.autenticationType }, process.env.SECRET);
         res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true });
@@ -220,6 +225,7 @@ export const changePassword = async (req, res) => {
 
 export const mainPage = (req, res) => {
     const inicio = Date.now();
+    const { ip } = req;
 
     try {
         logger.info('Página principal acessada com sucesso', {
