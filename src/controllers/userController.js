@@ -57,8 +57,14 @@ export const signInWithOauth = async (req, res) => {
             return res.status(401).json({ message: 'Usuário não encontrado' })
         }
 
+        const duracao = Date.now() - inicio;
+        logger.error('Erro ao fazer login com Oauth', error, {
+            usuarioId: service?.subGoogle || 'Desconecido',
+            duracao
+        });
+
+
         res.status(500).json({ error: 'Erro ao fazer login com Oauth' });
-        console.log(error);
     }
 }
 
@@ -77,8 +83,13 @@ export const signUp = async (req, res) => {
             return res.status(401).json({ error: error.message });
         }
 
+        const duracao = Date.now() - inicio;
+        logger.error('Erro ao registrar usuário', error, {
+            usuarioId: user?._id || 'Desconecido',
+            duracao
+        });
+
         res.status(500).json({ error: 'Erro ao registrar usuário' });
-        console.log(error);
     }
 }
 
@@ -97,8 +108,13 @@ export const signIn = async (req, res) => {
             return res.status(401).json({ error: error.message });
         }
         
+        const duracao = Date.now() - inicio;
+        logger.error('Erro ao fazer login', error, {
+            usuarioId: user?._id || 'Desconecido',
+            duracao
+        });
+
         res.status(500).json({ error: 'Erro ao fazer login' });
-        console.log(error);
     }
 };
 
