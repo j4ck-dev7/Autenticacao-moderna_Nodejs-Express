@@ -91,8 +91,14 @@ export const loginWithOauth = async (code) => {
 }
 
 export const registerUser = async (name, email, password) => {
+    logger.debug('Iniciando processo de registro de usuário', { email });
+
     const emailExists = await VerifyEmailExists(email);
     if (emailExists) {
+        logger.warn('Tentativa de registro com email já existente', { 
+            usuarioId: 'Desconecido',
+            ip
+        });
         throw new Error('Email existente');
     }
 
@@ -113,7 +119,10 @@ export const loginUser = async (email, password) => {
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (!passwordMatch) {
-        logger.warn('Tentativa de login com senha incorreta', { email });
+        logger.warn('Tentativa de login com senha incorreta', { 
+            usuarioId: user._id,
+            ip
+        });
         throw new Error('Email ou senha incorretos');
     }
 
