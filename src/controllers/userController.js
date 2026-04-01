@@ -135,7 +135,12 @@ export const mainPage = (req, res) => {
     try {
         res.status(200).json({ message: 'Página principal acessada com sucesso' })
     } catch (error) {
-        console.log(error)
+        const duracao = Date.now() - inicio;
+        logger.error('Erro ao acessar a página principal', error, {
+            usuarioId: req.user._id,
+            duracao
+        });    
+        
         res.status(500).json({ message: 'Erro ao acessar a página principal' })
     }
 }
