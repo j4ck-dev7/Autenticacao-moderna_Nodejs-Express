@@ -116,7 +116,7 @@ export const loginUser = async (email, password) => {
     return user;
 }
 
-export const resetPassword = async (id, newPassword, confirmPassword, password) => {
+export const resetPassword = async (newPassword, confirmPassword, password, id, ip) => {
     logger.debug('Iniciando processo de reset de senha', { usuarioId: id });
 
     const findUser = await findUserById(id);

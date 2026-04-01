@@ -1,0 +1,12 @@
+{"level":"info","message":"SIGINT recebido, encerrando servidor"}
+{"duracao":"164ms","ip":"::ffff:127.0.0.1","level":"info","message":"Requisição HTTP","metodo":"POST","rota":"/signIn","statusCode":200,"userAgent":"insomnia/12.4.0","usuarioId":"Desconhecido"}
+{"level":"info","message":"SIGINT recebido, encerrando servidor"}
+{"level":"error","message":"Erro ao alterar senha ip is not defined","stack":"ReferenceError: ip is not defined\n    at resetPassword (file:///home/jackson/Documents/Autenticacao-moderna-Nodejs-Express/src/services/userService.js:131:13)\n    at async changePassword (file:///home/jackson/Documents/Autenticacao-moderna-Nodejs-Express/src/controllers/userController.js:112:32)"}
+{"duracao":"191ms","ip":"::ffff:127.0.0.1","level":"info","message":"Requisição HTTP","metodo":"POST","rota":"/change-password","statusCode":500,"userAgent":"insomnia/12.4.0","usuarioId":"69c574a2a0d6dce0bc2e7ab2"}
+{"corpo":"{\"error\":\"Erro ao alterar senha\"}","level":"warn","message":"Erro na requisição","metodo":"POST","rota":"/change-password","statusCode":500,"usuarioId":"69c574a2a0d6dce0bc2e7ab2"}
+{"level":"info","message":"SIGINT recebido, encerrando servidor"}
+{"ip":"::ffff:127.0.0.1","level":"warn","message":"Tentativa de reset de senha com senha atual incorreta","usuarioId":"69c574a2a0d6dce0bc2e7ab2"}
+{"duracao":"180ms","ip":"::ffff:127.0.0.1","level":"info","message":"Requisição HTTP","metodo":"POST","rota":"/change-password","statusCode":401,"userAgent":"insomnia/12.4.0","usuarioId":"69c574a2a0d6dce0bc2e7ab2"}
+{"corpo":"{\"error\":\"Senha incorreta\"}","level":"warn","message":"Erro na requisição","metodo":"POST","rota":"/change-password","statusCode":401,"usuarioId":"69c574a2a0d6dce0bc2e7ab2"}
+{"duracao":"275ms","ip":"::ffff:127.0.0.1","level":"info","message":"Requisição HTTP","metodo":"POST","rota":"/change-password","statusCode":201,"userAgent":"insomnia/12.4.0","usuarioId":"69c574a2a0d6dce0bc2e7ab2"}
+{"level":"info","message":"SIGINT recebido, encerrando servidor"}

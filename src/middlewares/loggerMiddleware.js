@@ -1,4 +1,4 @@
-import { logger } from "../config/logger";
+import { logger } from "../config/logger.js";
 
 export const loggerMiddleware = (req, res, next) => {
     const inicio = Date.now();
@@ -12,7 +12,7 @@ export const loggerMiddleware = (req, res, next) => {
             rota: req.path,
             statusCode: res.statusCode,
             duracao: `${duracao}ms`,
-            usuarioId: req.user._id || 'Desconhecido',
+            usuarioId: req.user && req.user._id ? req.user._id : 'Desconhecido',
             ip: req.ip,
             userAgent: req.get('user-agent')
         });

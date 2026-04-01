@@ -1,6 +1,6 @@
 import dotenv from 'dotenv'
 import app from './src/app.js' 
-import { logger } from './config/logger.js';
+import { logger } from './src/config/logger.js';
 
 dotenv.config();
 

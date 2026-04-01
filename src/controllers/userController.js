@@ -1,5 +1,6 @@
 import { registerUser, loginUser, registerWithOauth, OauthRequestSignIn, OauthRequestSignUp, loginWithOauth, resetPassword } from "../services/userService.js";
-import jwt from 'jsonwebtoken'
+import jwt from 'jsonwebtoken';
+import { logger } from "../config/logger.js";
 
 export const getOauthUrlSignUp = async (req, res) => {
     try {
@@ -108,7 +109,7 @@ export const changePassword = async (req, res) => {
     const { ip } = req;
 
     try {
-        const updatePassword = await resetPassword(_id, newPassword, confirmNewPassword, password, ip);
+        const updatePassword = await resetPassword(newPassword, confirmNewPassword, password, _id, ip);
         res.status(201).json({ message: 'Senha alterada com sucesso' });
     } catch (error) {
         if(
