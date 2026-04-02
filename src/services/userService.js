@@ -170,7 +170,7 @@ export const resetPassword = async (newPassword, confirmPassword, password, id, 
             usuarioId: id, 
             ip
         });
-        throw new Error('Senha incorreta');
+        throw new Error('Credenciais inválidas');
     };
 
     if (newPassword !== confirmPassword) {

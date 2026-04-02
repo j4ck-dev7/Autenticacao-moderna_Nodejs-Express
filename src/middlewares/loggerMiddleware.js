@@ -23,7 +23,7 @@ export const loggerMiddleware = (req, res, next) => {
                 rota: req.path,
                 statusCode: res.statusCode,
                 corpo: data,
-                usuarioId: req.user._id || 'Desconhecido',
+                usuarioId: req.user && req.user._id ? req.user._id : 'Desconhecido'
             });
         }
 

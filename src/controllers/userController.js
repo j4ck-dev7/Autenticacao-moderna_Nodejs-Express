@@ -9,9 +9,11 @@ export const getOauthUrlSignUp = async (req, res) => {
     try {
         const url = await OauthRequestSignUp(ip);
 
+        const duracao = Date.now() - inicio;
         logger.debug('Url para autenticação Oauth gerada com sucesso', { 
             usuarioId: 'Desconecido',
-            ip
+            ip,
+            duracao: `${duracao}ms`
         });
 
         res.status(200).json({ url })
@@ -20,7 +22,7 @@ export const getOauthUrlSignUp = async (req, res) => {
         logger.error('Erro ao gerar url para autenticação Oauth', error, {
             usuarioId: 'Desconecido',
             ip,
-            duracao
+            duracao: `${duracao}ms`
         });
 
         res.status(500).json({ message: 'Erro ao gerar url para autenticação Oauth' })
@@ -34,9 +36,11 @@ export const getOauthUrlSignIn = async (req, res) => {
     try {
         const url = await OauthRequestSignIn(ip);
 
+        const duracao = Date.now() - inicio;
         logger.debug('Url para autenticação Oauth gerada com sucesso', { 
             usuarioId: 'Desconecido',
-            ip
+            ip,
+            duracao: `${duracao}ms`
         });
 
         res.status(200).json({ url })
@@ -55,9 +59,10 @@ export const signUpWithOauth = async (req, res) => {
     const { code } = req.query;
     const inicio = Date.now();
     const { ip } = req;
+    let service;
 
     try {
-        const service = await registerWithOauth(code, ip);
+        service = await registerWithOauth(code, ip);
 
         const token = jwt.sign({ user: service.subGoogle, }, process.env.SECRET);
         res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true });
@@ -66,10 +71,10 @@ export const signUpWithOauth = async (req, res) => {
         logger.info('Login bem-sucedido', {
             usuarioId: service.subGoogle,
             ip,
-            duracao
+            duracao: `${duracao}ms`
         });
 
-        res.status(201).json({ message: 'Usuário registrado com Oauth' });
+        res.redirect('/api/user/main');
     } catch (error) {
         if(error.message === 'Usuário existente'){
             return res.status(401).json({ message: 'Usuário existente' })
@@ -78,7 +83,7 @@ export const signUpWithOauth = async (req, res) => {
         const duracao = Date.now() - inicio;
         logger.error('Erro ao registrar usuário com Oauth', error, {
             usuarioId: service?.subGoogle || 'Desconecido',
-            duracao
+            duracao: `${duracao}ms`
         });
 
         res.status(500).json({ error: 'Erro ao registrar usuário' });
@@ -89,9 +94,10 @@ export const signInWithOauth = async (req, res) => {
     const { code } = req.query;
     const inicio = Date.now();
     const { ip } = req;
+    let service;
 
     try {
-        const service = await loginWithOauth(code, ip);
+        service = await loginWithOauth(code, ip);
         
         const token = jwt.sign({ user: service.subGoogle, }, process.env.SECRET);
         res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true });
@@ -100,10 +106,10 @@ export const signInWithOauth = async (req, res) => {
         logger.info('Login bem-sucedido', {
             usuarioId: service.subGoogle,
             ip,
-            duracao
+            duracao: `${duracao}ms`
         });
 
-        res.status(201).json({ message: 'Usuário logado com Oauth' });
+        res.redirect('/api/user/main');
     } catch (error) {
         if(error.message === 'Usuário não encontrado'){
             return res.status(401).json({ message: 'Usuário não encontrado' })
@@ -112,7 +118,7 @@ export const signInWithOauth = async (req, res) => {
         const duracao = Date.now() - inicio;
         logger.error('Erro ao fazer login com Oauth', error, {
             usuarioId: service?.subGoogle || 'Desconecido',
-            duracao
+            duracao: `${duracao}ms`
         });
 
         res.status(500).json({ error: 'Erro ao fazer login com Oauth' });
@@ -123,9 +129,10 @@ export const signUp = async (req, res) => {
     const { name, email, password } = req.body;
     const inicio = Date.now();
     const { ip } = req;
+    let user;
 
     try {
-        const user = await registerUser(name, email, password, ip);
+        user = await registerUser(name, email, password, ip);
 
         const token = jwt.sign({ _id: user._id, name: user.name, authenticationType: user.autenticationType }, process.env.SECRET);
         res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true });
@@ -134,7 +141,7 @@ export const signUp = async (req, res) => {
         logger.info('Login bem-sucedido', {
             usuarioId: user._id,
             ip,
-            duracao
+            duracao: `${duracao}ms`
         });
 
         res.status(201).json({ message: 'Usuário registrado com sucesso' });
@@ -146,7 +153,7 @@ export const signUp = async (req, res) => {
         const duracao = Date.now() - inicio;
         logger.error('Erro ao registrar usuário', error, {
             usuarioId: user?._id || 'Desconecido',
-            duracao
+            duracao: `${duracao}ms`
         });
 
         res.status(500).json({ error: 'Erro ao registrar usuário' });
@@ -157,9 +164,10 @@ export const signIn = async (req, res) => {
     const { email, password } = req.body;
     const inicio = Date.now();
     const { ip } = req;
+    let user;
 
     try {
-        const user = await loginUser(email, password, ip);
+        user = await loginUser(email, password, ip);
 
         const token = jwt.sign({ _id: user._id, name: user.name, authenticationType: user.autenticationType }, process.env.SECRET);
         res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true });
@@ -168,7 +176,7 @@ export const signIn = async (req, res) => {
         logger.info('Login bem-sucedido', {
             usuarioId: user._id,
             ip,
-            duracao
+            duracao: `${duracao}ms`
         });
 
         res.status(200).json({ message: 'Login bem-sucedido' });
@@ -180,7 +188,7 @@ export const signIn = async (req, res) => {
         const duracao = Date.now() - inicio;
         logger.error('Erro ao fazer login', error, {
             usuarioId: user?._id || 'Desconecido',
-            duracao
+            duracao: `${duracao}ms`
         });
 
         res.status(500).json({ error: 'Erro ao fazer login' });
@@ -196,10 +204,11 @@ export const changePassword = async (req, res) => {
     try {
         const updatePassword = await resetPassword(newPassword, confirmNewPassword, password, _id, ip);
 
+        const duracao = Date.now() - inicio;
         logger.info('Senha alterada com sucesso', {
             usuarioId: _id,
             ip,
-            duracao: Date.now() - inicio
+            duracao: `${duracao}ms`
         });
 
         res.status(201).json({ message: 'Senha alterada com sucesso' });
@@ -216,7 +225,7 @@ export const changePassword = async (req, res) => {
         const duracao = Date.now() - inicio;
         logger.error('Erro ao alterar senha', error, {
             usuarioId: _id,
-            duracao
+            duracao: `${duracao}ms`
         });
 
         res.status(500).json({ error: 'Erro ao alterar senha' });
@@ -228,10 +237,11 @@ export const mainPage = (req, res) => {
     const { ip } = req;
 
     try {
+        const duracao = Date.now() - inicio;
         logger.info('Página principal acessada com sucesso', {
             usuarioId: req.user._id,
             ip,
-            duracao: Date.now() - inicio
+            duracao: `${duracao}ms`
         });
 
         res.status(200).json({ message: 'Página principal acessada com sucesso' })
@@ -239,7 +249,7 @@ export const mainPage = (req, res) => {
         const duracao = Date.now() - inicio;
         logger.error('Erro ao acessar a página principal', error, {
             usuarioId: req.user._id,
-            duracao
+            duracao: `${duracao}ms`
         });    
         
         res.status(500).json({ message: 'Erro ao acessar a página principal' })

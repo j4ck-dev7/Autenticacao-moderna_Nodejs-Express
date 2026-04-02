@@ -9,8 +9,8 @@ const router = express.Router();
 
 router.get('/Oauth/google/get/url/signIn', rateLimit.Oauth2UrlLimit, userController.getOauthUrlSignIn);
 router.get('/Oauth/google/get/url/signUp', rateLimit.Oauth2UrlLimit, userController.getOauthUrlSignUp);
-router.get('/Oauth/google/signUp', rateLimit.Oauth2AuthenticationLimit, userController.signUpWithOauth);
-router.get('/Oauth/google/signIn', rateLimit.Oauth2AuthenticationLimit, userController.signInWithOauth);
+router.get('/Oauth/signUp', rateLimit.Oauth2AuthenticationLimit, userController.signUpWithOauth);
+router.get('/Oauth/signIn', rateLimit.Oauth2AuthenticationLimit, userController.signInWithOauth);
 router.get('/main', rateLimit.mainPageLimit, Auth, userController.mainPage);
 router.post('/signUp', rateLimit.aunteticacaoLimit, validate.signUpValidate, userController.signUp);
 router.post('/signIn', rateLimit.aunteticacaoLimit, validate.signInValidate, userController.signIn);
