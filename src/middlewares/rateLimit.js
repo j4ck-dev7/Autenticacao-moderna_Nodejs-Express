@@ -1,4 +1,5 @@
 import { rateLimit } from 'express-rate-limit';
+import { logger } from '../config/logger.js';
 
 // Em rotas principais, o recomendado é de 300 requisições por minuto, desde que não seja feito alguma consulta
 // banco de dados.
@@ -9,6 +10,12 @@ export const mainPageLimit = rateLimit({
     legacyHeaders: false, // Desativa os cabeçalhos X-RateLimit-*
     message: 'Muitas requisições, por favor tente novamente mais tarde.',
     handler: (req, res, next, options) => {
+        logger.warn(`IP ${req.ip} excedeu o limite de requisições para a rota ${req.originalUrl}`, {
+            usuario: req.user ? req.user.id : 'Desconecido',
+            ip: req.ip,
+            rota: req.originalUrl,
+            metodo: req.method
+        });
         res.status(options.statusCode).json({ message: options.message });
     }
 });
