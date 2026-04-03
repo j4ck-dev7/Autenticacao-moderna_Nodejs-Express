@@ -1,6 +1,7 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import userRouter from './routes/userRouter.js';
+import { logger } from './config/logger.js';
 import { loggerMiddleware } from './middlewares/loggerMiddleware.js';
 
 const app = express();
