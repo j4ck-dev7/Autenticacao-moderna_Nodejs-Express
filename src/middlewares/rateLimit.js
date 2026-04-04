@@ -22,7 +22,7 @@ export const mainPageLimit = rateLimit({
 
 // Em rotas Post para autenticação, o recomendado é de 3-5 requisições a cada 15 minutos, isso previne ataques de 
 // força bruta.
-export const aunteticacaoLimit = rateLimit({
+export const autenticacaoLimit = rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 5,
     standardHeaders: true,
@@ -47,6 +47,12 @@ export const Oauth2UrlLimit = rateLimit({
     legacyHeaders: false,
     message: 'Você excedeu o limite de requisições, por favor tente novamente mais tarde.',
     handler: (req, res, next, options) => {
+        logger.warn(`IP ${req.ip} excedeu o limite de requisições para a rota ${req.originalUrl}`, {
+            usuario: req.user ? req.user.id : 'Desconecido',
+            ip: req.ip,
+            rota: req.originalUrl,
+            metodo: req.method
+        });
         res.status(options.statusCode).json({ message: options.message });
     }
 });
