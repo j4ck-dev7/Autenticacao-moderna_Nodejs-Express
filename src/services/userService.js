@@ -25,6 +25,11 @@ export const OauthRequestSignUp = (ip) => {
         include_granted_scopes: true
     });
 
+    logger.info('URL para autenticação Oauth gerada com sucesso', { 
+        usuarioId: 'Desconecido',
+        ip
+    });
+
     return authorizationUrl
 };
 
@@ -49,6 +54,10 @@ export const OauthRequestSignIn = (ip) => {
         include_granted_scopes: true
     });
 
+    logger.info('URL para autenticação Oauth gerada com sucesso', { 
+        usuarioId: 'Desconecido',
+        ip
+    });
     return authorizationUrl
 };
 
@@ -78,7 +87,10 @@ export const registerWithOauth = async (code, ip) => {
         throw new Error('Usuário existente');
     }
 
-    return await createUserWithOauth(sub, name);
+    const user = await createUserWithOauth(sub, name);
+    logger.info('Usuário registrado com Oauth com sucesso', { usuarioId: user.subGoogle, ip });
+
+    return user;
 };
 
 export const loginWithOauth = async (code, ip) => {
@@ -104,8 +116,16 @@ export const loginWithOauth = async (code, ip) => {
 
     const userExists = await findUserByOauth(sub);
     if (!userExists) {
+        logger.warn('Tentativa de login com Oauth para usuário não registrado', {
+            usuarioId: 'Desconecido',
+            ip
+        });
         throw new Error('Usuário não encontrado');
     }
+    logger.info('Usuário logado com Oauth com sucesso', {
+        usuarioId: userExists.subGoogle,
+        ip
+    });
 
     return userExists;
 }
@@ -123,8 +143,11 @@ export const registerUser = async (name, email, password, ip) => {
     }
 
     const passwordHash = await bcrypt.hashSync(password);
+ 
+    const user = await createUser(name, email, passwordHash);
+    logger.info('Usuário registrado com sucesso', { email, usuarioId: user._id, ip });
 
-    return await createUser(name, email, passwordHash);
+    return user;
 }
 
 export const loginUser = async (email, password, ip) => {
@@ -153,6 +176,10 @@ export const loginUser = async (email, password, ip) => {
         throw new Error('Email ou senha incorretos');
     }
 
+    logger.info('Usuário logado com sucesso', { 
+        usuarioId: user._id,
+        ip
+    });
     return user;
 }
 
@@ -184,6 +211,7 @@ export const resetPassword = async (newPassword, confirmPassword, password, id, 
     const newPasswordHash = await bcrypt.hashSync(newPassword);
 
     const updatePassword = await updateUserPassword(id, newPasswordHash);
+    logger.info('Senha do usuário atualizada com sucesso', { usuarioId: id });
     
     return updatePassword;
 }
