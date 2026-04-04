@@ -66,6 +66,12 @@ export const Oauth2AuthenticationLimit = rateLimit({
     legacyHeaders: false,
     message: 'Você excedeu o limite de requisições, por favor tente novamente mais tarde.',
     handler: (req, res, next, options) => {
+        logger.warn(`IP ${req.ip} excedeu o limite de requisições para a rota ${req.originalUrl}`, {
+            usuario: req.user ? req.user.id : 'Desconecido',
+            ip: req.ip,
+            rota: req.originalUrl,
+            metodo: req.method
+        });
         res.status(options.statusCode).json({ message: options.message });
     }
 });
