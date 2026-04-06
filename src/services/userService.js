@@ -10,6 +10,9 @@ export const OauthRequestSignUp = (ip) => {
         ip
     });
 
+    // Em produção deveria ser algo mais complexo e dinâmico, talvez usando o ID do cliente e um timestamp para garantir unicidade
+    // o 'testGoogle' é apenas um placeholder para exemplificar a geração do hash, em produção isso deve ser algo mais robusto e seguro
+    // para evitar ataques CSRF, o ideal seria armazenar esse state em algum lugar (como um banco de dados ou cache) para validar quando o usuário retornar do provedor de autenticação
     const state =  CryptoJS.SHA256('testGoogle').toString(CryptoJS.enc.Hex);
 
     const client = new OAuth2Client(

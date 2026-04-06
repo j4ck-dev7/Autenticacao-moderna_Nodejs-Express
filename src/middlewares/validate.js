@@ -5,7 +5,7 @@ import { logger } from '../config/logger.js';
 // Validação do login
 const signInValidateSchema = joi.object({
     email: joi.string().required().empty().email().min(13).max(50),
-    password: joi.string().required().alphanum().empty().min(8).max(100),
+    password: joi.string().required().pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/).empty().min(8).max(100),
 });
 
 export const signInValidate = (req, res, next) => {
@@ -15,6 +15,14 @@ export const signInValidate = (req, res, next) => {
     const { error } = signInValidateSchema.validate(data);
 
     switch(error?.details[0].message) {
+        case `"password" with value "${password}" fails to match the required pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$/`:
+            logger.warn(`IP ${req.ip} tentou fazer login com senha que não atende os requisitos de complexidade`, {
+                usuario: req.user ? req.user.id : 'Desconecido',
+                ip: req.ip,
+                rota: req.originalUrl,
+                metodo: req.method
+            });
+            return res.status(400).json({ error: 'A senha deve conter no mínimo 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais' });
         case '"email" is required': 
             logger.warn(`IP ${req.ip} tentou fazer login sem email`, {
                 usuario: req.user ? req.user.id : 'Desconecido',
@@ -118,7 +126,7 @@ export const signInValidate = (req, res, next) => {
 const signUpValidateSchema = joi.object({
     name: joi.string().required().empty().min(3).max(50),
     email: joi.string().required().empty().email().min(13).max(50),
-    password: joi.string().required().empty().alphanum().min(8).max(100),
+    password: joi.string().required().empty().pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$')).min(8).max(100),
 })
 
 export const signUpValidate = (req, res, next) => {
@@ -128,6 +136,14 @@ export const signUpValidate = (req, res, next) => {
     const { error } = signUpValidateSchema.validate(data);
    
     switch(error?.details[0].message) {
+        case `"password" with value "${password}" fails to match the required pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$/`:
+            logger.warn(`IP ${req.ip} tentou fazer cadastro com senha que não atende os requisitos de complexidade`, {
+                usuario: req.user ? req.user.id : 'Desconecido',
+                ip: req.ip,
+                rota: req.originalUrl,
+                metodo: req.method
+            });
+            return res.status(400).json({ error: 'A senha deve conter no mínimo 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais' });
         case '"name" is required': 
             logger.warn(`IP ${req.ip} tentou fazer cadastro sem nome`, {
                 usuario: req.user ? req.user.id : 'Desconecido',
@@ -262,7 +278,7 @@ export const signUpValidate = (req, res, next) => {
 // Validação de mudança de senha 
 const changePasswordValidateSchema = joi.object({
     password: joi.string().required().empty().alphanum().min(8).max(100),
-    newPassword: joi.string().min(8).max(100).required().alphanum().empty(),
+    newPassword: joi.string().min(8).max(100).required().pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/).empty(),
     confirmNewPassword: joi.any().valid(joi.ref('newPassword')).required().empty()
 });
 
@@ -273,6 +289,14 @@ export const changePasswordValidate = (req, res, next) => {
     const { error } = changePasswordValidateSchema.validate(data);
    
     switch(error?.details[0].message) {
+        case `"newPassword" with value "${newPassword}" fails to match the required pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$/`:
+            logger.warn(`O usuário ${req.user ? req.user.id : 'Desconecido'} tentou mudar a senha para uma nova senha que não atende os requisitos de complexidade`, {
+                usuario: req.user ? req.user.id : 'Desconecido',
+                ip: req.ip,
+                rota: req.originalUrl,
+                metodo: req.method
+            });
+            return res.status(400).json({ error: 'A nova senha deve conter no mínimo 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais' });
         case '"password" is required': 
             logger.warn(`O usuário ${req.user ? req.user.id : 'Desconecido'} tentou mudar a senha sem preencher a senha atual`, {
                 usuario: req.user ? req.user.id : 'Desconecido',
