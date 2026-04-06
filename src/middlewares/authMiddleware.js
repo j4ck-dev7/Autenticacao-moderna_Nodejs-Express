@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken'
-import { logger } from '../config/logger';
+import { logger } from '../config/logger.js';
 
 export const Auth = (req, res, next) => {
     const cookie = req.cookies.authenticationToken;

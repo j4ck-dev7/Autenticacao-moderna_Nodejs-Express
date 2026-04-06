@@ -1,6 +1,6 @@
 // Importação de depêndencias 
 import joi from 'joi';
-import { logger } from '../config/logger';
+import { logger } from '../config/logger.js';
 
 // Validação do login
 const signInValidateSchema = joi.object({
