@@ -2,7 +2,8 @@ import dotenv from 'dotenv'
 import app from './src/app.js' 
 import { logger } from './src/config/logger.js';
 
-dotenv.config();
+dotenv.config(); // Todas as variáveis de ambiente devem ser longas, com no minimo 32 caracteres com letras maiusculas e minisculas, numeros e caracteres especiais
+// Além disso, é recomendável usar um gerenciador de segredos, como o HashiCorp Vault, AWS Secrets Manager, Azure Key Vault, etc, para armazenar as variáveis de ambiente de forma segura. Nunca armazene variáveis de ambiente sensíveis em arquivos .env em produção, use o gerenciador de segredos para isso.
 
 import { connect } from './src/config/db.js'
 

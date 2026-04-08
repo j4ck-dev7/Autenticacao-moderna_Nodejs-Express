@@ -1,5 +1,7 @@
 import { rateLimit } from 'express-rate-limit';
 import { logger } from '../config/logger.js';
+import RedisStore from 'rate-limit-redis';
+import { redisClient } from '../config/redis.js';
 
 // Em rotas principais, o recomendado é de 300 requisições por minuto, desde que não seja feito alguma consulta
 // banco de dados.
@@ -8,6 +10,13 @@ export const mainPageLimit = rateLimit({
     limit: 5, // Limite de requisições por janela (windowMs) pelo ip
     standardHeaders: true, // Retorna as informações do rate limit dentro dos cabeçalhos do RateLimit-*
     legacyHeaders: false, // Desativa os cabeçalhos X-RateLimit-*
+    store: new RedisStore({
+        client: redisClient,
+        prefix: 'rl:auth:',
+    }), // Onde armazenar os dados do rate limit, neste caso usando Redis, o que é recomendado para aplicações em produção, já que o armazenamento em memória (MemoryStore) não é recomendado para produção, pois não é escalável e pode causar problemas de memória.
+    keyGenerator: (req) => {
+        return `${req.ip}-${req.body.email}`;
+    },
     message: 'Muitas requisições, por favor tente novamente mais tarde.',
     handler: (req, res, next, options) => {
         logger.warn(`IP ${req.ip} excedeu o limite de requisições para a rota ${req.originalUrl}`, {
@@ -27,6 +36,13 @@ export const autenticacaoLimit = rateLimit({
     limit: 5,
     standardHeaders: true,
     legacyHeaders: false,
+    store: new RedisStore({
+        client: redisClient,
+        prefix: 'rl:auth:',
+    }),
+    keyGenerator: (req) => {
+        return `${req.ip}-${req.body.email}`;
+    },
     message: 'Você excedeu o limite de requisições, por favor tente novamente mais tarde.',
     handler: (req, res, next, options) => {
         logger.warn(`IP ${req.ip} excedeu o limite de requisições para a rota ${req.originalUrl}`, {
@@ -45,6 +61,13 @@ export const Oauth2UrlLimit = rateLimit({
     limit: 10,
     standardHeaders: true,
     legacyHeaders: false,
+    store: new RedisStore({
+        client: redisClient,
+        prefix: 'rl:auth:',
+    }),
+    keyGenerator: (req) => {
+        return `${req.ip}-${req.body.email}`;
+    },
     message: 'Você excedeu o limite de requisições, por favor tente novamente mais tarde.',
     handler: (req, res, next, options) => {
         logger.warn(`IP ${req.ip} excedeu o limite de requisições para a rota ${req.originalUrl}`, {
@@ -64,6 +87,13 @@ export const Oauth2AuthenticationLimit = rateLimit({
     limit: 10,
     standardHeaders: true,
     legacyHeaders: false,
+    store: new RedisStore({
+        client: redisClient,
+        prefix: 'rl:auth:',
+    }),
+    keyGenerator: (req) => {
+        return `${req.ip}-${req.body.email}`;
+    },
     message: 'Você excedeu o limite de requisições, por favor tente novamente mais tarde.',
     handler: (req, res, next, options) => {
         logger.warn(`IP ${req.ip} excedeu o limite de requisições para a rota ${req.originalUrl}`, {

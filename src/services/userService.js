@@ -1,19 +1,14 @@
 import { findUserByEmail, VerifyEmailExists, createUser, findUserByOauth, createUserWithOauth, findUserById, updateUserPassword } from "../repositories/userRepository.js";
 import bcrypt from "bcryptjs";
-import CryptoJS from "crypto-js";
+import crypto from 'crypto'
 import { OAuth2Client } from 'google-auth-library'
 import { logger } from "../config/logger.js";
 
-export const OauthRequestSignUp = (ip) => {
+export const OauthRequestSignUp = (ip, state) => {
     logger.debug('Iniciando processo de geração de url para autenticação Oauth', { 
         usuarioId: 'Desconecido',
         ip
     });
-
-    // Em produção deveria ser algo mais complexo e dinâmico, talvez usando o ID do cliente e um timestamp para garantir unicidade
-    // o 'testGoogle' é apenas um placeholder para exemplificar a geração do hash, em produção isso deve ser algo mais robusto e seguro
-    // para evitar ataques CSRF, o ideal seria armazenar esse state em algum lugar (como um banco de dados ou cache) para validar quando o usuário retornar do provedor de autenticação
-    const state =  CryptoJS.SHA256('testGoogle').toString(CryptoJS.enc.Hex);
 
     const client = new OAuth2Client(
         process.env.GOOGLE_CLIENT_ID,
@@ -36,13 +31,13 @@ export const OauthRequestSignUp = (ip) => {
     return authorizationUrl
 };
 
-export const OauthRequestSignIn = (ip) => {
+export const OauthRequestSignIn = (ip, state) => {
     logger.debug('Iniciando processo de geração de url para autenticação Oauth', { 
         usuarioId: 'Desconecido',
         ip
     });
 
-    const state =  CryptoJS.SHA256('testGoogle').toString(CryptoJS.enc.Hex);
+    const state =  crypto.randomBytes(32).toString('hex');
 
     const client = new OAuth2Client(
         process.env.GOOGLE_CLIENT_ID,

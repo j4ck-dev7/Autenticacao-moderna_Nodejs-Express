@@ -4,6 +4,7 @@ import * as userController from '../controllers/userController.js';
 import { Auth } from '../middlewares/authMiddleware.js';
 import * as rateLimit from '../middlewares/rateLimit.js';
 import * as validate from '../middlewares/validate.js';
+import { csrfProtection } from '../middlewares/csrfProtection.js';
 
 const router = express.Router();
 
@@ -12,8 +13,8 @@ router.get('/Oauth/google/get/url/signUp', rateLimit.Oauth2UrlLimit, userControl
 router.get('/Oauth/signUp', rateLimit.Oauth2AuthenticationLimit, userController.signUpWithOauth);
 router.get('/Oauth/signIn', rateLimit.Oauth2AuthenticationLimit, userController.signInWithOauth);
 router.get('/main', rateLimit.mainPageLimit, Auth, userController.mainPage);
-router.post('/signUp', rateLimit.autenticacaoLimit, validate.signUpValidate, userController.signUp);
-router.post('/signIn', rateLimit.autenticacaoLimit, validate.signInValidate, userController.signIn);
-router.post('/change-password', rateLimit.autenticacaoLimit, Auth, validate.changePasswordValidate, userController.changePassword);
+router.post('/signUp', csrfProtection, rateLimit.autenticacaoLimit, validate.signUpValidate, userController.signUp);
+router.post('/signIn', csrfProtection, rateLimit.autenticacaoLimit, validate.signInValidate, userController.signIn);
+router.post('/change-password', csrfProtection, rateLimit.autenticacaoLimit, Auth, validate.changePasswordValidate, userController.changePassword);
 
 export default router;

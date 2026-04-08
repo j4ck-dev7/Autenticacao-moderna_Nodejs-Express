@@ -2,13 +2,46 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import userRouter from './routes/userRouter.js';
 import { logger } from './config/logger.js';
+// Em produção, é recomendado usar helmet, sem ele a aplicação fica vulnerável a XSS, Clickjacking,
+// MIME-sniffing, entre outros ataques.
+import helmet from 'helmet';
 import { loggerMiddleware } from './middlewares/loggerMiddleware.js';
+import cors from 'cors';
+
+// Em produção, é recomendado usar CORS, para evitar que a API seja consumida por domínios não autorizados.
+app.use(cors({
+    origin: 'https://meu-dominio.com',
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+}));
 
 const app = express();
 
+app.use(helmet());
+app.use(helmet.frameguard({ action: 'deny' })); // Evita clickjacking
+app.use(helmet.xssFilter());
+app.use(helmet.noSniff());
+app.use(helmet.hsts({ maxAge: 31536000, includeSubDomains: true }));
+// E também é recomendado usar o contentSecurityPolicy para evitar ataques de XSS
+app.use(helmet.contentSecurityPolicy({
+    directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'"]
+    }
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    cookie: { httpOnly: true, secure: true, sameSite: 'strict' }
+}));
 app.use(loggerMiddleware);
 
 app.use((err, req, res, next) => {

@@ -5,9 +5,11 @@ import { logger } from "../config/logger.js";
 export const getOauthUrlSignUp = async (req, res) => {
     const inicio = Date.now();
     const { ip } = req;
+    const state =  crypto.randomBytes(32).toString('hex');
+    req.session.OauthState = state;
 
     try {
-        const url = await OauthRequestSignUp(ip);
+        const url = await OauthRequestSignUp(ip, state);
 
         const duracao = Date.now() - inicio;
         logger.debug('Url para autenticação Oauth gerada com sucesso', { 
@@ -32,9 +34,11 @@ export const getOauthUrlSignUp = async (req, res) => {
 export const getOauthUrlSignIn = async (req, res) => {
     const inicio = Date.now();
     const { ip } = req;
+    const state =  crypto.randomBytes(32).toString('hex');
+    req.session.OauthState = state;
 
     try {
-        const url = await OauthRequestSignIn(ip);
+        const url = await OauthRequestSignIn(ip, state);
 
         const duracao = Date.now() - inicio;
         logger.debug('Url para autenticação Oauth gerada com sucesso', { 
@@ -56,16 +60,27 @@ export const getOauthUrlSignIn = async (req, res) => {
 }
 
 export const signUpWithOauth = async (req, res) => {
-    const { code } = req.query;
+    const { code, state } = req.query;
     const inicio = Date.now();
     const { ip } = req;
-    let service;
+    let service;    
+
+    if(state !== req.session.OauthState) {
+        const duracao = Date.now() - inicio;
+        logger.warn('State inválido na autenticação Oauth, possível ataque CSRF', {
+            usuarioId: 'Desconecido',
+            ip,
+            duracao: `${duracao}ms`
+        });
+
+        return res.status(401).json({ message: 'State inválido' });
+    }
 
     try {
         service = await registerWithOauth(code, ip);
 
         const token = jwt.sign({ user: service.subGoogle, }, process.env.SECRET);
-        res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true });
+        res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true, sameSite: 'strict' });
 
         const duracao = Date.now() - inicio;
         logger.info('Login bem-sucedido', {
@@ -91,16 +106,28 @@ export const signUpWithOauth = async (req, res) => {
 };
 
 export const signInWithOauth = async (req, res) => {
-    const { code } = req.query;
+    const { code, state } = req.query;
     const inicio = Date.now();
     const { ip } = req;
     let service;
+
+    if(state !== req.session.OauthState) {
+        const duracao = Date.now() - inicio;
+        logger.warn('State inválido na autenticação Oauth, possível ataque CSRF', {
+            usuarioId: 'Desconecido',
+            ip,
+            duracao: `${duracao}ms`
+        });
+
+        return res.status(401).json({ message: 'State inválido' });
+    }
 
     try {
         service = await loginWithOauth(code, ip);
         
         const token = jwt.sign({ user: service.subGoogle, }, process.env.SECRET);
-        res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true });
+        // Em produção, o ideal é usar sameSite: 'strict' para evitar ataques CSRF.
+        res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true, sameSite: 'strict' });
 
         const duracao = Date.now() - inicio;
         logger.info('Login bem-sucedido', {
@@ -135,7 +162,7 @@ export const signUp = async (req, res) => {
         user = await registerUser(name, email, password, ip);
 
         const token = jwt.sign({ _id: user._id, name: user.name, authenticationType: user.autenticationType }, process.env.SECRET);
-        res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true });
+        res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true, sameSite: 'strict' });
 
         const duracao = Date.now() - inicio;
         logger.info('Login bem-sucedido', {
@@ -170,7 +197,7 @@ export const signIn = async (req, res) => {
         user = await loginUser(email, password, ip);
 
         const token = jwt.sign({ _id: user._id, name: user.name, authenticationType: user.autenticationType }, process.env.SECRET);
-        res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true });
+        res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true, sameSite: 'strict' });
 
         const duracao = Date.now() - inicio;
         logger.info('Login bem-sucedido', {
