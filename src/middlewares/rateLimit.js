@@ -1,7 +1,7 @@
 import { rateLimit } from 'express-rate-limit';
 import { logger } from '../config/logger.js';
 import RedisStore from 'rate-limit-redis';
-import { redisClient } from '../config/redis.js';
+import client from '../config/redis.js';
 
 // Em rotas principais, o recomendado é de 300 requisições por minuto, desde que não seja feito alguma consulta
 // banco de dados.
@@ -11,7 +11,7 @@ export const mainPageLimit = rateLimit({
     standardHeaders: true, // Retorna as informações do rate limit dentro dos cabeçalhos do RateLimit-*
     legacyHeaders: false, // Desativa os cabeçalhos X-RateLimit-*
     store: new RedisStore({
-        client: redisClient,
+        client: client,
         prefix: 'rl:auth:',
     }), // Onde armazenar os dados do rate limit, neste caso usando Redis, o que é recomendado para aplicações em produção, já que o armazenamento em memória (MemoryStore) não é recomendado para produção, pois não é escalável e pode causar problemas de memória.
     keyGenerator: (req) => {
@@ -37,7 +37,7 @@ export const autenticacaoLimit = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     store: new RedisStore({
-        client: redisClient,
+        client: client,
         prefix: 'rl:auth:',
     }),
     keyGenerator: (req) => {
@@ -62,7 +62,7 @@ export const Oauth2UrlLimit = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     store: new RedisStore({
-        client: redisClient,
+        client: client,
         prefix: 'rl:auth:',
     }),
     keyGenerator: (req) => {
@@ -88,7 +88,7 @@ export const Oauth2AuthenticationLimit = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     store: new RedisStore({
-        client: redisClient,
+        client: client,
         prefix: 'rl:auth:',
     }),
     keyGenerator: (req) => {
