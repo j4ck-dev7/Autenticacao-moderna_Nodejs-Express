@@ -1,6 +1,5 @@
 import { findUserByEmail, VerifyEmailExists, createUser, findUserByOauth, createUserWithOauth, findUserById, updateUserPassword } from "../repositories/userRepository.js";
 import bcrypt from "bcryptjs";
-import crypto from 'crypto'
 import { OAuth2Client } from 'google-auth-library'
 import { logger } from "../config/logger.js";
 
@@ -36,8 +35,6 @@ export const OauthRequestSignIn = (ip, state) => {
         usuarioId: 'Desconecido',
         ip
     });
-
-    const state =  crypto.randomBytes(32).toString('hex');
 
     const client = new OAuth2Client(
         process.env.GOOGLE_CLIENT_ID,

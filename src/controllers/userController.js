@@ -1,11 +1,11 @@
 import { registerUser, loginUser, registerWithOauth, OauthRequestSignIn, OauthRequestSignUp, loginWithOauth, resetPassword } from "../services/userService.js";
-import jwt from 'jsonwebtoken';
 import { logger } from "../config/logger.js";
+import crypto from 'node:crypto'
 
 export const getOauthUrlSignUp = async (req, res) => {
     const inicio = Date.now();
     const { ip } = req;
-    const state =  crypto.randomBytes(32).toString('hex');
+    const state =  crypto.randomBytes(32).toString('hex')
     req.session.OauthState = state;
 
     try {
@@ -79,17 +79,36 @@ export const signUpWithOauth = async (req, res) => {
     try {
         service = await registerWithOauth(code, ip);
 
-        const token = jwt.sign({ user: service.subGoogle, }, process.env.SECRET);
-        res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true, sameSite: 'strict' });
+        req.session.regenerate((err) => {
+            if(err) {
+                logger.error('Erro ao criar sessão após registro com Oauth', err, {
+                    usuarioId: service._id,
+                    ip
+                });
+                return res.status(500).json({ message: 'Erro ao criar sessão' });
+            };
 
-        const duracao = Date.now() - inicio;
-        logger.info('Login bem-sucedido', {
-            usuarioId: service.subGoogle,
-            ip,
-            duracao: `${duracao}ms`
-        });
+            req.session.user = service._id;
 
-        res.redirect('/api/user/main');
+            req.session.save((err) => {
+                if(err) {
+                    logger.error('Erro ao salvar sessão após registro com Oauth', err, {
+                        usuarioId: service._id,
+                        ip
+                    });
+                    return res.status(500).json({ message: 'Erro ao salvar sessão' });
+                };
+
+                const duracao = Date.now() - inicio;
+                logger.info('Registro bem-sucedido', {
+                    usuarioId: service._id,
+                    ip,
+                    duracao: `${duracao}ms`
+                });
+
+                res.redirect('/api/user/main');
+            });
+        })
     } catch (error) {
         if(error.message === 'Usuário existente'){
             return res.status(401).json({ message: 'Usuário existente' })
@@ -125,18 +144,36 @@ export const signInWithOauth = async (req, res) => {
     try {
         service = await loginWithOauth(code, ip);
         
-        const token = jwt.sign({ user: service.subGoogle, }, process.env.SECRET);
-        // Em produção, o ideal é usar sameSite: 'strict' para evitar ataques CSRF.
-        res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true, sameSite: 'strict' });
+        req.session.regenerate((err) => {
+            if(err) {
+                logger.error('Erro ao criar sessão após registro com Oauth', err, {
+                    usuarioId: service._id,
+                    ip
+                });
+                return res.status(500).json({ message: 'Erro ao criar sessão' });
+            };
 
-        const duracao = Date.now() - inicio;
-        logger.info('Login bem-sucedido', {
-            usuarioId: service.subGoogle,
-            ip,
-            duracao: `${duracao}ms`
-        });
+            req.session.user = service._id;
 
-        res.redirect('/api/user/main');
+            req.session.save((err) => {
+                if(err) {
+                    logger.error('Erro ao salvar sessão após registro com Oauth', err, {
+                        usuarioId: service._id,
+                        ip
+                    });
+                    return res.status(500).json({ message: 'Erro ao salvar sessão' });
+                };
+
+                const duracao = Date.now() - inicio;
+                logger.info('Login bem-sucedido', {
+                    usuarioId: service._id,
+                    ip,
+                    duracao: `${duracao}ms`
+                });
+
+                res.redirect('/api/user/main');
+            });
+        })
     } catch (error) {
         if(error.message === 'Usuário não encontrado'){
             return res.status(401).json({ message: 'Usuário não encontrado' })
@@ -156,22 +193,41 @@ export const signUp = async (req, res) => {
     const { name, email, password } = req.body;
     const inicio = Date.now();
     const { ip } = req;
-    let user;
+    let service;
 
     try {
-        user = await registerUser(name, email, password, ip);
+        service = await registerUser(name, email, password, ip);
 
-        const token = jwt.sign({ _id: user._id, name: user.name, authenticationType: user.autenticationType }, process.env.SECRET);
-        res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true, sameSite: 'strict' });
+        req.session.regenerate((err) => {
+            if(err) {
+                logger.error('Erro ao criar sessão após registro com Oauth', err, {
+                    usuarioId: service._id,
+                    ip
+                });
+                return res.status(500).json({ message: 'Erro ao criar sessão' });
+            };
 
-        const duracao = Date.now() - inicio;
-        logger.info('Login bem-sucedido', {
-            usuarioId: user._id,
-            ip,
-            duracao: `${duracao}ms`
-        });
+            req.session.user = service._id;
 
-        res.status(201).json({ message: 'Usuário registrado com sucesso' });
+            req.session.save((err) => {
+                if(err) {
+                    logger.error('Erro ao salvar sessão após registro com Oauth', err, {
+                        usuarioId: service._id,
+                        ip
+                    });
+                    return res.status(500).json({ message: 'Erro ao salvar sessão' });
+                };
+
+                const duracao = Date.now() - inicio;
+                logger.info('Login bem-sucedido', {
+                    usuarioId: service._id,
+                    ip,
+                    duracao: `${duracao}ms`
+                });
+
+                res.redirect('/api/user/main');
+            });
+        })
     } catch (error) {
         if(error.message === 'Email existente') {
             return res.status(401).json({ error: error.message });
@@ -179,7 +235,7 @@ export const signUp = async (req, res) => {
 
         const duracao = Date.now() - inicio;
         logger.error('Erro ao registrar usuário', error, {
-            usuarioId: user?._id || 'Desconecido',
+            usuarioId: service?._id || 'Desconecido',
             duracao: `${duracao}ms`
         });
 
@@ -191,22 +247,41 @@ export const signIn = async (req, res) => {
     const { email, password } = req.body;
     const inicio = Date.now();
     const { ip } = req;
-    let user;
+    let service;
 
     try {
-        user = await loginUser(email, password, ip);
+        service = await loginUser(email, password, ip);
 
-        const token = jwt.sign({ _id: user._id, name: user.name, authenticationType: user.autenticationType }, process.env.SECRET);
-        res.cookie('authenticationToken', token, { expires: new Date(Date.now() + 2 * 3600000), httpOnly: true, secure: true, sameSite: 'strict' });
+        req.session.regenerate((err) => {
+            if(err) {
+                logger.error('Erro ao criar sessão após registro com Oauth', err, {
+                    usuarioId: service._id,
+                    ip
+                });
+                return res.status(500).json({ message: 'Erro ao criar sessão' });
+            };
 
-        const duracao = Date.now() - inicio;
-        logger.info('Login bem-sucedido', {
-            usuarioId: user._id,
-            ip,
-            duracao: `${duracao}ms`
-        });
+            req.session.user = service._id;
 
-        res.status(200).json({ message: 'Login bem-sucedido' });
+            req.session.save((err) => {
+                if(err) {
+                    logger.error('Erro ao salvar sessão após registro com Oauth', err, {
+                        usuarioId: service._id,
+                        ip
+                    });
+                    return res.status(500).json({ message: 'Erro ao salvar sessão' });
+                };
+
+                const duracao = Date.now() - inicio;
+                logger.info('Login bem-sucedido', {
+                    usuarioId: service._id,
+                    ip,
+                    duracao: `${duracao}ms`
+                });
+
+                res.redirect('/api/user/main');
+            });
+        })
     } catch (error) {
         if(error.message === 'Email ou senha incorretos') {
             return res.status(401).json({ error: error.message });
@@ -214,7 +289,7 @@ export const signIn = async (req, res) => {
         
         const duracao = Date.now() - inicio;
         logger.error('Erro ao fazer login', error, {
-            usuarioId: user?._id || 'Desconecido',
+            usuarioId: service?._id || 'Desconecido',
             duracao: `${duracao}ms`
         });
 
@@ -224,8 +299,8 @@ export const signIn = async (req, res) => {
 
 export const changePassword = async (req, res) => {
     const inicio = Date.now();
-    const { _id } = req.user;
     const { password, newPassword, confirmNewPassword } = req.body;
+    const _id = req.session.user;
     const { ip } = req;
 
     try {
@@ -262,11 +337,12 @@ export const changePassword = async (req, res) => {
 export const mainPage = (req, res) => {
     const inicio = Date.now();
     const { ip } = req;
+    const _id = req.session.user;
 
     try {
         const duracao = Date.now() - inicio;
         logger.info('Página principal acessada com sucesso', {
-            usuarioId: req.user._id,
+            usuarioId: _id,
             ip,
             duracao: `${duracao}ms`
         });
@@ -275,7 +351,7 @@ export const mainPage = (req, res) => {
     } catch (error) {
         const duracao = Date.now() - inicio;
         logger.error('Erro ao acessar a página principal', error, {
-            usuarioId: req.user._id,
+            usuarioId: _id,
             duracao: `${duracao}ms`
         });    
         

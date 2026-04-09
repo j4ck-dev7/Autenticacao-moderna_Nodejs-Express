@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/j4ck-dev7/Login-and-register-project#readme",
   "dependencies": {
+    "@dr.pogodin/csurf": "^1.16.9",
     "@hapi/joi": "^17.1.1",
     "bcryptjs": "^3.0.2",
     "cookie-parser": "^1.4.7",

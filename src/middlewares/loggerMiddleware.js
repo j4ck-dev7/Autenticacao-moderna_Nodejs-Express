@@ -12,7 +12,7 @@ export const loggerMiddleware = (req, res, next) => {
             rota: req.path,
             statusCode: res.statusCode,
             duracao: `${duracao}ms`,
-            usuarioId: req.user && req.user._id ? req.user._id : 'Desconhecido',
+            usuarioId: req.session && req.session.user ? req.session.user : 'Desconhecido',
             ip: req.ip,
             userAgent: req.get('user-agent')
         });
@@ -23,7 +23,7 @@ export const loggerMiddleware = (req, res, next) => {
                 rota: req.path,
                 statusCode: res.statusCode,
                 corpo: data,
-                usuarioId: req.user && req.user._id ? req.user._id : 'Desconhecido'
+                usuarioId: req.session && req.session.user ? req.session.user : 'Desconhecido'
             });
         }
 

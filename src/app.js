@@ -1,23 +1,24 @@
 import express from 'express';
-import cookieParser from 'cookie-parser';
+// import cookieParser from 'cookie-parser';
 import userRouter from './routes/userRouter.js';
 import { logger } from './config/logger.js';
+import session from 'express-session';
 // Em produção, é recomendado usar helmet, sem ele a aplicação fica vulnerável a XSS, Clickjacking,
 // MIME-sniffing, entre outros ataques.
 import helmet from 'helmet';
 import { loggerMiddleware } from './middlewares/loggerMiddleware.js';
 import cors from 'cors';
+import csurf from '@dr.pogodin/csurf';
+
+const app = express();
 
 // Em produção, é recomendado usar CORS, para evitar que a API seja consumida por domínios não autorizados.
 app.use(cors({
-    origin: 'https://meu-dominio.com',
+    origin: 'http://localhost:5000', // Substitua pelo domínio do frontend em produção
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
 }));
-
-const app = express();
-
 app.use(helmet());
 app.use(helmet.frameguard({ action: 'deny' })); // Evita clickjacking
 app.use(helmet.xssFilter());
@@ -35,20 +36,23 @@ app.use(helmet.contentSecurityPolicy({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+// app.use(cookieParser());
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
-    cookie: { httpOnly: true, secure: true, sameSite: 'strict' }
+    cookie: { httpOnly: true, secure: true, sameSite: 'strict', maxAge: 60000 }
 }));
+// Em produção, é recomendado usar um middleware CSRF, para evitar requisições maliciosas.
+// Esta const deve ser usada como middleware nas rotas POST, PUT, DELETE, etc, que alteram dados sensíveis.
+export const csrfProtection = csurf({ cookie: false, sessionKey: process.env.SESSION_SECRET }); // Session-based
 app.use(loggerMiddleware);
 
 app.use((err, req, res, next) => {
     logger.error('Erro na aplicação', err, {
         metodo: req.method,
         rota: req.path,
-        usuarioId: req.user._id || 'Desconecido'
+        usuarioId: req.session && req.session.user ? req.session.user : 'Desconecido'
     });
 
     res.status(500).json({ error: 'Erro interno do servidor' });

@@ -2,8 +2,8 @@ import jwt from 'jsonwebtoken'
 import { logger } from '../config/logger.js';
 
 export const Auth = (req, res, next) => {
-    const cookie = req.cookies.authenticationToken;
-    if(!cookie){ 
+    const session = req.session.user
+    if(!session){ 
         logger.info('Acesso negado - token de autenticação ausente', {
             usuarioId: 'Desconecido',
             ip: req.ip
