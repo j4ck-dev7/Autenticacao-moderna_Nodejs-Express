@@ -1,6 +1,6 @@
 import { registerUser, loginUser, registerWithOauth, OauthRequestSignIn, OauthRequestSignUp, loginWithOauth, resetPassword } from "../services/userService.js";
 import { logger } from "../config/logger.js";
-import crypto from 'node:crypto'
+import crypto from 'node:crypto';
 
 export const getOauthUrlSignUp = async (req, res) => {
     const inicio = Date.now();
@@ -92,7 +92,7 @@ export const signUpWithOauth = async (req, res) => {
 
             req.session.save((err) => {
                 if(err) {
-                    logger.error('Erro ao salvar sessão após registro com Oauth', err, {
+                    logger.error('Erro ao salvar sessão após registro', err, {
                         usuarioId: service._id,
                         ip
                     });
@@ -116,7 +116,7 @@ export const signUpWithOauth = async (req, res) => {
 
         const duracao = Date.now() - inicio;
         logger.error('Erro ao registrar usuário com Oauth', error, {
-            usuarioId: service?.subGoogle || 'Desconecido',
+            usuarioId: service.subGoogle || 'Desconecido',
             duracao: `${duracao}ms`
         });
 
@@ -200,7 +200,7 @@ export const signUp = async (req, res) => {
 
         req.session.regenerate((err) => {
             if(err) {
-                logger.error('Erro ao criar sessão após registro com Oauth', err, {
+                logger.error('Erro ao criar sessão após registro', err, {
                     usuarioId: service._id,
                     ip
                 });
@@ -208,10 +208,11 @@ export const signUp = async (req, res) => {
             };
 
             req.session.user = service._id;
+            console.log(req.session.user);
 
             req.session.save((err) => {
                 if(err) {
-                    logger.error('Erro ao salvar sessão após registro com Oauth', err, {
+                    logger.error('Erro ao salvar sessão após registro', err, {
                         usuarioId: service._id,
                         ip
                     });
@@ -235,7 +236,7 @@ export const signUp = async (req, res) => {
 
         const duracao = Date.now() - inicio;
         logger.error('Erro ao registrar usuário', error, {
-            usuarioId: service?._id || 'Desconecido',
+            usuarioId: service._id || 'Desconecido',
             duracao: `${duracao}ms`
         });
 

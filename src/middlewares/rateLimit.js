@@ -32,7 +32,7 @@ export const mainPageLimit = rateLimit({
 // Em rotas Post para autenticação, o recomendado é de 3-5 requisições a cada 15 minutos, isso previne ataques de 
 // força bruta.
 export const autenticacaoLimit = rateLimit({
-    windowMs: 15 * 60 * 1000,
+    windowMs: 60 * 1000,
     limit: 5,
     standardHeaders: true,
     legacyHeaders: false,
@@ -83,7 +83,7 @@ export const Oauth2UrlLimit = rateLimit({
 // Rate-limit para rotas de autenticação Oauth, 10 requisições a cada 15 minutos, isso previne ataques de força
 // bruta, já que nesta rota envolver consultas | escritas no banco de dados.
 export const Oauth2AuthenticationLimit = rateLimit({
-    windowMs: 15 * 60 * 1000,
+    windowMs: 60 * 1000,
     limit: 10,
     standardHeaders: true,
     legacyHeaders: false,

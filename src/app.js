@@ -41,11 +41,11 @@ app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
-    cookie: { httpOnly: true, secure: true, sameSite: 'strict', maxAge: 60000 }
+    cookie: { httpOnly: true, secure: false, sameSite: 'strict', maxAge: 600000 }
 }));
 // Em produção, é recomendado usar um middleware CSRF, para evitar requisições maliciosas.
 // Esta const deve ser usada como middleware nas rotas POST, PUT, DELETE, etc, que alteram dados sensíveis.
-export const csrfProtection = csurf({ cookie: false, sessionKey: process.env.SESSION_SECRET }); // Session-based
+const csrfProtection = csurf({ cookie: false, sessionKey: process.env.SESSION_SECRET }); // Session-based
 app.use(loggerMiddleware);
 
 app.use((err, req, res, next) => {
