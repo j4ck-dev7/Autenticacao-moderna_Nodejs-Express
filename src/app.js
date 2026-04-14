@@ -8,7 +8,8 @@ import session from 'express-session';
 import helmet from 'helmet';
 import { loggerMiddleware } from './middlewares/loggerMiddleware.js';
 import cors from 'cors';
-import csurf from '@dr.pogodin/csurf';
+import client from "./config/redis.js";
+import { RedisStore } from 'connect-redis';
 
 const app = express();
 
@@ -39,13 +40,15 @@ app.use(express.urlencoded({ extended: true }));
 // app.use(cookieParser());
 app.use(session({
     secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true,
-    cookie: { httpOnly: true, secure: false, sameSite: 'strict', maxAge: 600000 }
+    resave: false, 
+    saveUninitialized: false,
+    cookie: { httpOnly: true, secure: false, sameSite: 'strict', maxAge: 30000 },
+    store: new RedisStore({ 
+        client,
+        ttl: 300,
+        prefix: 'session:'
+    })
 }));
-// Em produção, é recomendado usar um middleware CSRF, para evitar requisições maliciosas.
-// Esta const deve ser usada como middleware nas rotas POST, PUT, DELETE, etc, que alteram dados sensíveis.
-const csrfProtection = csurf({ cookie: false, sessionKey: process.env.SESSION_SECRET }); // Session-based
 app.use(loggerMiddleware);
 
 app.use((err, req, res, next) => {

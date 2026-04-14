@@ -1,9 +1,6 @@
 import { logger } from '../config/logger.js';
 
 export const Auth = (req, res, next) => {
-    const session = req.session.user;
-    console.log(session)
-    console.log(req.session.user)
     try {
         if(!req.session.user) { 
             logger.info('Acesso negado - token de autenticação ausente', {

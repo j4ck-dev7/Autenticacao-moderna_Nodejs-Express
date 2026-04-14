@@ -12,15 +12,18 @@
 import slowDown from "express-slow-down";
 import { RedisStore } from 'rate-limit-redis';
 import { client } from '../config/redis.js';
+import { ipKeyGenerator } from "express-rate-limit";
 
 // Em rotas de autenticação, o recomendado é de 3-5 requisições a cada 15 minutos, isso previne ataques de força bruta.
 export const authenticationSlowDown = slowDown({
     windowMs: 60 * 1000,
     delayAfter: 3, // Começa a atrasar após x requisições
     // O delayMs é o atraso aplicado a cada tentativa, seja progressivo ou exponencial.
-    delayMs: (hits) => hits ** 3 * 100, // Atraso exponencial.
+    delayMs: (hits) => hits ** 2 * 100, // Atraso exponencial.
+    maxDelayMs: 25 * 1000,
     store: new RedisStore({
         sendCommand: (...args) => client.sendCommand(args),
+        prefix: 'slowdown:'
     }), // Onde armazenar os dados do rate limit, neste caso usando Redis, o que é recomendado para aplicações em produção, já que o armazenamento em memória (MemoryStore) não é recomendado para produção, pois não é escalável e pode causar problemas de memória.
     keyGenerator: (req) => {
         if(req.session && req.session.user) return req.session.user
@@ -42,7 +45,8 @@ export const createUserSlowDown = slowDown({
     windowMs: 60 * 1000,
     delayAfter: 3, // Começa a atrasar após x requisições
     // O delayMs é o atraso aplicado a cada tentativa, seja progressivo ou exponencial.
-    delayMs: (hits) => hits ** 3 * 100, // Atraso exponencial.
+    delayMs: (hits) => hits ** 2 * 100, // Atraso exponencial.
+    maxDelayMs: 25 * 1000,
     store: new RedisStore({
         sendCommand: (...args) => client.sendCommand(args),
     }), // Onde armazenar os dados do rate limit, neste caso usando Redis, o que é recomendado para aplicações em produção, já que o armazenamento em memória (MemoryStore) não é recomendado para produção, pois não é escalável e pode causar problemas de memória.
@@ -65,15 +69,17 @@ export const createUserSlowDown = slowDown({
 // mais eficiente, portanto o slow down pode ser aplicado em uma janela mais longa.
 export const mainPageSlowDown = slowDown({
     windowMs: 60 * 1000,
-    delayAfter: 5, // Começa a atrasar após x requisições
+    delayAfter: 3, // Começa a atrasar após x requisições
     // O delayMs é o atraso aplicado a cada tentativa, seja progressivo ou exponencial.
-    delayMs: (hits) => hits ** 3 * 100, // Atraso exponencial.
+    delayMs: (hits) => hits ** 2 * 100,
+    maxDelayMs: 25 * 1000,
     store: new RedisStore({
         sendCommand: (...args) => client.sendCommand(args),
+        prefix: 'slowdown:'
     }), // Onde armazenar os dados do rate limit, neste caso usando Redis, o que é recomendado para aplicações em produção, já que o armazenamento em memória (MemoryStore) não é recomendado para produção, pois não é escalável e pode causar problemas de memória.
     keyGenerator: (req) => {
-        if(req.session && req.session.user) return req.session.user
-        return ipKeyGenerator(req.ip)
+        if(req.session && req.session.user) return req.session.user;
+        return ipKeyGenerator(req.ip);
     },
     handler: (req, res, next, options) => {
         logger.warn(`IP ${req.ip} excedeu o limite de requisições livres para a rota ${req.originalUrl}, aplicando atraso`, {
@@ -89,7 +95,8 @@ export const Oauth2UrlSlowDown = slowDown({
     windowMs: 60 * 1000,
     delayAfter: 5, // Começa a atrasar após x requisições
     // O delayMs é o atraso aplicado a cada tentativa, seja progressivo ou exponencial.
-    delayMs: (hits) => hits ** 3 * 100, // Atraso exponencial.
+    delayMs: (hits) => hits ** 2 * 100, // Atraso exponencial.
+    maxDelayMs: 25 * 1000,
     store: new RedisStore({
         sendCommand: (...args) => client.sendCommand(args),
     }), // Onde armazenar os dados do rate limit, neste caso usando Redis, o que é recomendado para aplicações em produção, já que o armazenamento em memória (MemoryStore) não é recomendado para produção, pois não é escalável e pode causar problemas de memória.
@@ -111,7 +118,8 @@ export const Oauth2SlowDown = slowDown({
     windowMs: 60 * 1000,
     delayAfter: 5, // Começa a atrasar após x requisições
     // O delayMs é o atraso aplicado a cada tentativa, seja progressivo ou exponencial.
-    delayMs: (hits) => hits ** 3 * 100, // Atraso exponencial.
+    delayMs: (hits) => hits ** 2 * 100, // Atraso exponencial.
+    maxDelayMs: 25 * 1000,
     store: new RedisStore({
         sendCommand: (...args) => client.sendCommand(args),
     }), // Onde armazenar os dados do rate limit, neste caso usando Redis, o que é recomendado para aplicações em produção, já que o armazenamento em memória (MemoryStore) não é recomendado para produção, pois não é escalável e pode causar problemas de memória.
