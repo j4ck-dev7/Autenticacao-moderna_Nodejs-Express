@@ -7,7 +7,9 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: false, minlength: 8, maxlength: 100 },
     admin: { type: Boolean, default: false },
     subGoogle: { type: String, default: null },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    isVerified: { type: Boolean, default: false },
+    status: { type: String, enum: [ 'active', 'pending', 'blocked' ], default: 'pending' }
 });
 
 userSchema.pre('save', function(next){
