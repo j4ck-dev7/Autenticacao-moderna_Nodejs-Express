@@ -1,6 +1,7 @@
-import { registerUser, loginUser, registerWithOauth, OauthRequestSignIn, OauthRequestSignUp, loginWithOauth, resetPassword } from "../services/userService.js";
+import { registerUser, loginUser, registerWithOauth, OauthRequestSignIn, OauthRequestSignUp, loginWithOauth, resetPassword, verifyEmail } from "../services/userService.js";
 import { logger } from "../config/logger.js";
 import crypto from 'node:crypto';
+
 
 export const getOauthUrlSignUp = async (req, res) => {
     const inicio = Date.now();
@@ -198,37 +199,15 @@ export const signUp = async (req, res) => {
     try {
         service = await registerUser(name, email, password, ip);
 
-        req.session.regenerate((err) => {
-            if(err) {
-                logger.error('Erro ao criar sessão após registro', err, {
-                    usuarioId: service._id,
-                    ip
-                });
-                return res.status(500).json({ message: 'Erro ao criar sessão' });
-            };
+        const duracao = Date.now() - inicio;
+        logger.info('Registro bem-sucedido', {
+            usuarioId: service._id,
+            ip,
+            duracao: `${duracao}ms`
+        });
 
-            req.session.user = service._id;
-            console.log(req.session.user);
+        res.status(201).json({ message: 'Para concluir o registro, verifique seu email' });
 
-            req.session.save((err) => {
-                if(err) {
-                    logger.error('Erro ao salvar sessão após registro', err, {
-                        usuarioId: service._id,
-                        ip
-                    });
-                    return res.status(500).json({ message: 'Erro ao salvar sessão' });
-                };
-
-                const duracao = Date.now() - inicio;
-                logger.info('Registro bem-sucedido', {
-                    usuarioId: service._id,
-                    ip,
-                    duracao: `${duracao}ms`
-                });
-
-                res.status(201).json({ message: 'Para concluir o registro, verifique seu email' });
-            });
-        })
     } catch (error) {
         if(error.message === 'Email existente') {
             return res.status(401).json({ error: error.message });
@@ -241,6 +220,68 @@ export const signUp = async (req, res) => {
         });
 
         res.status(500).json({ error: 'Erro ao registrar usuário' });
+    }
+}
+
+export const verifyUser = async (req, res) => {
+    const { token } = req.query;
+    const inicio = Date.now();
+    const { ip } = req;
+    let service;
+
+    try{
+        service = await verifyEmail(token, ip);
+
+        const duracao = Date.now() - inicio;
+        logger.info('Email verificado com sucesso', {
+            usuarioId: service._id,
+            ip,
+            duracao: `${duracao}ms`
+        });
+
+        req.session.regenerate((err) => {
+            if(err) {
+                logger.error('Erro ao criar sessão após a verificação de email', err, {
+                    usuarioId: service._id,
+                    ip
+                });
+                return res.status(500).json({ message: 'Erro ao criar sessão' });
+            };
+
+            req.session.user = service._id;
+
+            req.session.save((err) => {
+                if(err) {
+                    logger.error('Erro ao salvar sessão após a verificação de email', err, {
+                        usuarioId: service._id,
+                        ip
+                    });
+                    return res.status(500).json({ message: 'Erro ao salvar sessão' });
+                };
+
+                const duracao = Date.now() - inicio;
+                logger.info('Email verificado com sucesso', {
+                    usuarioId: service._id,
+                    ip,
+                    duracao: `${duracao}ms`
+                });
+
+                res.status(200).json({ message: 'Email verificado com sucesso' });
+            });
+        })
+    }catch(error){
+        if(error.message === 'Token ausente' || error.message === 'Token inválido' || error.message === 'Usuário não encontrado' || error.message === 'Email já verificado') {
+            return res.status(401).json({ error: error.message });
+        }
+
+        const duracao = Date.now() - inicio;
+        logger.error('Erro ao verificar email', error, {
+            usuarioId: service?._id || 'Desconecido',
+            ip,
+            duracao: `${duracao}ms`
+        });
+
+        res.status(500).json({ error: 'Erro ao verificar email' });
     }
 }
 
