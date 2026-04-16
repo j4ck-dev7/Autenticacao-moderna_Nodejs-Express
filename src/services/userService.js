@@ -2,6 +2,8 @@ import { findUserByEmail, VerifyEmailExists, createUser, findUserByOauth, create
 import bcrypt from "bcryptjs";
 import { OAuth2Client } from 'google-auth-library'
 import { logger } from "../config/logger.js";
+import jwt from "jsonwebtoken";
+import { transporter } from "../config/nodemailer.js";
 
 export const OauthRequestSignUp = (ip, state) => {
     logger.debug('Iniciando processo de geração de url para autenticação Oauth', { 
@@ -141,6 +143,18 @@ export const registerUser = async (name, email, password, ip) => {
  
     const user = await createUser(name, email, passwordHash);
     logger.info('Usuário registrado com sucesso', { email, usuarioId: user._id, ip });
+
+    const token = jwt.sign({ id: user._id, email: email }, process.env.EMAIL_VERIFICATION_SECRET, { expiresIn: 1000 * 60 * 15 });
+    const verificationLink = `http://localhost:5000/api/user/verify-email?token=${token}`;
+    await transporter.sendMail({
+        from: process.env.SMTP_USER,
+        to: email,
+        subject: 'Verificação de Email',
+        html: `<p>Olá ${name},</p>
+               <p>Obrigado por se registrar. Por favor, clique no link abaixo para verificar seu email:</p>
+               <a href="${verificationLink}">Verificar Email</a>
+               <p>Este link expira em 15 minutos.</p>`
+    })
 
     return user;
 }

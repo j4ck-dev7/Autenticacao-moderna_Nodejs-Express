@@ -220,13 +220,13 @@ export const signUp = async (req, res) => {
                 };
 
                 const duracao = Date.now() - inicio;
-                logger.info('Login bem-sucedido', {
+                logger.info('Registro bem-sucedido', {
                     usuarioId: service._id,
                     ip,
                     duracao: `${duracao}ms`
                 });
 
-                res.redirect('/api/user/main');
+                res.status(201).json({ message: 'Para concluir o registro, verifique seu email' });
             });
         })
     } catch (error) {
