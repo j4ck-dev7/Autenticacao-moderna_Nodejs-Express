@@ -178,6 +178,15 @@ export const loginUser = async (email, password, ip) => {
         throw new Error('Email ou senha incorretos');
     }
 
+    if(!user.isVerified){
+        logger.warn('Tentativa de login com email não verificado', {
+            usuarioId: user._id,
+            ip
+        });
+
+        throw new Error('Email não verificado');
+    }
+
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (!passwordMatch) {

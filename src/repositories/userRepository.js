@@ -22,7 +22,7 @@ export const createUserWithOauth = async (sub, name) => {
 
 export const findUserByEmail = async (email) => {
     return await User.findOne({ email })
-        .select('email name password _id authenticationType')
+        .select('email name password _id authenticationType isVerified')
         .lean();
 }
 

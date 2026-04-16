@@ -270,7 +270,12 @@ export const verifyUser = async (req, res) => {
             });
         })
     }catch(error){
-        if(error.message === 'Token ausente' || error.message === 'Token inválido' || error.message === 'Usuário não encontrado' || error.message === 'Email já verificado') {
+        if(
+            error.message === 'Token ausente' || 
+            error.message === 'Token inválido' || 
+            error.message === 'Usuário não encontrado' || 
+            error.message === 'Email já verificado'
+        ) {
             return res.status(401).json({ error: error.message });
         }
 
@@ -325,13 +330,14 @@ export const signIn = async (req, res) => {
             });
         })
     } catch (error) {
-        if(error.message === 'Email ou senha incorretos') {
+        if(error.message === 'Email ou senha incorretos' || error.message === 'Email não verificado') {
             return res.status(401).json({ error: error.message });
         }
         
         const duracao = Date.now() - inicio;
         logger.error('Erro ao fazer login', error, {
             usuarioId: service?._id || 'Desconecido',
+            ip,
             duracao: `${duracao}ms`
         });
 
