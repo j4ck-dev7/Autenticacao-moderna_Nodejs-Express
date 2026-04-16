@@ -48,3 +48,7 @@ export const findUserById = async (id) => {
 export const updateUserPassword = async (id, newPassword) => {
     return await User.findByIdAndUpdate(id, { password: newPassword });
 };
+
+export const changeUserStatusActive = async (id) => {
+    return await User.findByIdAndUpdate(id, { status: 'active', isVerified: true });
+}
