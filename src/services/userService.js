@@ -1,10 +1,9 @@
-import { findUserByEmail, VerifyEmailExists, createUser, findUserByOauth, createUserWithOauth, findUserById, updateUserPassword } from "../repositories/userRepository.js";
+import { findUserByEmail, VerifyEmailExists, createUser, findUserByOauth, createUserWithOauth, findUserById, updateUserPassword, findUserByIdEmail } from "../repositories/userRepository.js";
 import bcrypt from "bcryptjs";
 import { OAuth2Client } from 'google-auth-library'
 import { logger } from "../config/logger.js";
 import jwt from "jsonwebtoken";
 import { transporter } from "../config/nodemailer.js";
-import session from "express-session";
 
 export const OauthRequestSignUp = (ip, state) => {
     logger.debug('Iniciando processo de geração de url para autenticação Oauth', { 
@@ -227,13 +226,21 @@ export const verifyEmail = async (token, ip) => {
         throw new Error('Token inválido');
     }
 
-    const user = await findUserById(decoded.id);
+    const user = await findUserByIdEmail(decoded.id);
     if (!user) {
         logger.warn('Usuário não encontrado para token de verificação de email', {
             usuarioId: 'Desconecido',
             ip,
         });
         throw new Error('Usuário não encontrado');
+    };
+
+    if(user.email !== decoded.email) {
+        logger.warn('Token de verificação de email não corresponde ao usuário', {
+            usuarioId: user._id,
+            ip,
+        });
+        throw new Error('Token inválido');
     }
 
     if (user.isVerified) {
