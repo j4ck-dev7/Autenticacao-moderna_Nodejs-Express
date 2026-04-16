@@ -105,3 +105,27 @@ export const Oauth2AuthenticationLimit = rateLimit({
         res.status(options.statusCode).json({ message: options.message });
     }
 });
+
+export const verifyEmailLimit = rateLimit({
+    windowMs: 60 * 1000,
+    limit: 2,
+    standardHeaders: true,
+    legacyHeaders: false,
+    store: new RedisStore({
+        sendCommand: (...args) => client.sendCommand(args),
+    }), // Onde armazenar os dados do rate limit, neste caso usando Redis, o que é recomendado para aplicações em produção, já que o armazenamento em memória (MemoryStore) não é recomendado para produção, pois não é escalável e pode causar problemas de memória.
+    keyGenerator: (req) => {
+        if(req.session && req.session.user) return req.session.user
+        return ipKeyGenerator(req.ip)
+    },
+    message: 'Você excedeu o limite de requisições, por favor tente novamente mais tarde.',
+    handler: (req, res, next, options) => {
+        logger.warn(`IP ${req.ip} excedeu o limite de requisições para a rota ${req.originalUrl}`, {
+            usuario: req.session ? req.session.user : 'Desconecido',
+            ip: req.ip,
+            rota: req.originalUrl,
+            metodo: req.method
+        });
+        res.status(options.statusCode).json({ message: options.message });
+    }
+});
