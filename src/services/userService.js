@@ -1,4 +1,15 @@
-import { findUserByEmail, VerifyEmailExists, createUser, findUserByOauth, createUserWithOauth, findUserById, updateUserPassword, findUserByIdEmail } from "../repositories/userRepository.js";
+import { 
+    findUserByEmail, 
+    VerifyEmailExists, 
+    createUser, 
+    findUserByOauth, 
+    createUserWithOauth, 
+    findUserById, 
+    updateUserPassword, 
+    findUserByIdEmail, 
+    changeUserStatusActive
+} from "../repositories/userRepository.js";
+
 import bcrypt from "bcryptjs";
 import { OAuth2Client } from 'google-auth-library'
 import { logger } from "../config/logger.js";

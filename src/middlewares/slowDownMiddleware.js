@@ -13,6 +13,7 @@ import slowDown from "express-slow-down";
 import { RedisStore } from 'rate-limit-redis';
 import { client } from '../config/redis.js';
 import { ipKeyGenerator } from "express-rate-limit";
+import { logger } from '../config/logger.js';
 
 // Em rotas de autenticação, o recomendado é de 3-5 requisições a cada 15 minutos, isso previne ataques de força bruta.
 export const authenticationSlowDown = slowDown({
@@ -49,6 +50,7 @@ export const createUserSlowDown = slowDown({
     maxDelayMs: 25 * 1000,
     store: new RedisStore({
         sendCommand: (...args) => client.sendCommand(args),
+        prefix: 'slowdown:'
     }), // Onde armazenar os dados do rate limit, neste caso usando Redis, o que é recomendado para aplicações em produção, já que o armazenamento em memória (MemoryStore) não é recomendado para produção, pois não é escalável e pode causar problemas de memória.
     keyGenerator: (req) => {
         if(req.session && req.session.user) return req.session.user

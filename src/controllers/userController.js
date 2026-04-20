@@ -215,7 +215,7 @@ export const signUp = async (req, res) => {
 
         const duracao = Date.now() - inicio;
         logger.error('Erro ao registrar usuário', error, {
-            usuarioId: service._id || 'Desconecido',
+            usuarioId: service?._id || 'Desconecido',
             duracao: `${duracao}ms`
         });
 

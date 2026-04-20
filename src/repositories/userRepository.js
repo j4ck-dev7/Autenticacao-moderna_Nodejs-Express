@@ -47,7 +47,7 @@ export const findUserById = async (id) => {
 
 export const findUserByIdEmail = async (id) => {
     return await User.findById(id)
-        .select('password')
+        .select('email isVerified')
         .lean();
 }
 

@@ -43,6 +43,7 @@
     "winston": "^3.19.0"
   },
   "devDependencies": {
+    "ioredis-mock": "^8.13.1",
     "jest": "^30.2.0"
   }
 }

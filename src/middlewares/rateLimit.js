@@ -38,6 +38,7 @@ export const autenticacaoLimit = rateLimit({
     legacyHeaders: false,
     store: new RedisStore({
         sendCommand: (...args) => client.sendCommand(args),
+        prefix: 'authenticationLimit:'
     }), // Onde armazenar os dados do rate limit, neste caso usando Redis, o que é recomendado para aplicações em produção, já que o armazenamento em memória (MemoryStore) não é recomendado para produção, pois não é escalável e pode causar problemas de memória.
     keyGenerator: (req) => {
         if(req.session && req.session.user) return req.session.user
