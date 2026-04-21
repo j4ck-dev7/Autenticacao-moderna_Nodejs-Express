@@ -86,10 +86,10 @@ GOOGLE_CLIENT_ID=seu-client-id-do-google-cloud.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=sua-client-secret-do-google-cloud
 GOOGLE_REDIRECT_URL_SIGNIN=http://localhost:5000/api/user/Oauth/signIn
 GOOGLE_REDIRECT_URL_SIGNUP=http://localhost:5000/api/user/Oauth/signUp
-GOOGLE_REFRESH_TOKEN=Token-gerado-no-oauthplayground
 
 # Email (Nodemailer)
 SMTP_USER=Ususário-que-irá-mandar-os-email
+GOOGLE_REFRESH_TOKEN=Token-gerado-no-oauthplayground
 EMAIL_VERIFICATION_SECRET=sua-chave-secreta-para-tokens-verificacao
 ```
 
