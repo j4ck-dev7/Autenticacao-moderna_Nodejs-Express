@@ -24,7 +24,7 @@ export const authenticationSlowDown = slowDown({
     maxDelayMs: 25 * 1000,
     store: new RedisStore({
         sendCommand: (...args) => client.sendCommand(args),
-        prefix: 'slowdown:'
+        prefix: 'slowdown:authentication:'
     }), // Onde armazenar os dados do rate limit, neste caso usando Redis, o que é recomendado para aplicações em produção, já que o armazenamento em memória (MemoryStore) não é recomendado para produção, pois não é escalável e pode causar problemas de memória.
     keyGenerator: (req) => {
         if(req.session && req.session.user) return req.session.user
@@ -50,7 +50,7 @@ export const createUserSlowDown = slowDown({
     maxDelayMs: 25 * 1000,
     store: new RedisStore({
         sendCommand: (...args) => client.sendCommand(args),
-        prefix: 'slowdown:'
+        prefix: 'slowdown:createUser:'
     }), // Onde armazenar os dados do rate limit, neste caso usando Redis, o que é recomendado para aplicações em produção, já que o armazenamento em memória (MemoryStore) não é recomendado para produção, pois não é escalável e pode causar problemas de memória.
     keyGenerator: (req) => {
         if(req.session && req.session.user) return req.session.user
@@ -77,7 +77,7 @@ export const mainPageSlowDown = slowDown({
     maxDelayMs: 25 * 1000,
     store: new RedisStore({
         sendCommand: (...args) => client.sendCommand(args),
-        prefix: 'slowdown:'
+        prefix: 'slowdown:mainPage:'
     }), // Onde armazenar os dados do rate limit, neste caso usando Redis, o que é recomendado para aplicações em produção, já que o armazenamento em memória (MemoryStore) não é recomendado para produção, pois não é escalável e pode causar problemas de memória.
     keyGenerator: (req) => {
         if(req.session && req.session.user) return req.session.user;
@@ -101,6 +101,7 @@ export const Oauth2UrlSlowDown = slowDown({
     maxDelayMs: 25 * 1000,
     store: new RedisStore({
         sendCommand: (...args) => client.sendCommand(args),
+        prefix: 'slowdown:oauth2Url:'
     }), // Onde armazenar os dados do rate limit, neste caso usando Redis, o que é recomendado para aplicações em produção, já que o armazenamento em memória (MemoryStore) não é recomendado para produção, pois não é escalável e pode causar problemas de memória.
     keyGenerator: (req) => {
         if(req.session && req.session.user) return req.session.user
@@ -124,6 +125,7 @@ export const Oauth2SlowDown = slowDown({
     maxDelayMs: 25 * 1000,
     store: new RedisStore({
         sendCommand: (...args) => client.sendCommand(args),
+        prefix: 'slowdown:oauth2:'
     }), // Onde armazenar os dados do rate limit, neste caso usando Redis, o que é recomendado para aplicações em produção, já que o armazenamento em memória (MemoryStore) não é recomendado para produção, pois não é escalável e pode causar problemas de memória.
     keyGenerator: (req) => {
         if(req.session && req.session.user) return req.session.user
@@ -147,6 +149,7 @@ export const verifyEmailSlowDown = slowDown({
     maxDelayMs: 25 * 1000,
     store: new RedisStore({
         sendCommand: (...args) => client.sendCommand(args),
+        prefix: 'slowdown:verifyEmail:'
     }), // Onde armazenar os dados do rate limit, neste caso usando Redis, o que é recomendado para aplicações em produção, já que o armazenamento em memória (MemoryStore) não é recomendado para produção, pois não é escalável e pode causar problemas de memória.
     keyGenerator: (req) => {
         if(req.session && req.session.user) return req.session.user

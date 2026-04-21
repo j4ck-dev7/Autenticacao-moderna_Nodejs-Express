@@ -12,6 +12,7 @@ export const mainPageLimit = rateLimit({
     legacyHeaders: false, // Desativa os cabeçalhos X-RateLimit-*
     store: new RedisStore({
         sendCommand: (...args) => client.sendCommand(args),
+        prefix: 'ratelimit:mainPage:'
     }), // Onde armazenar os dados do rate limit, neste caso usando Redis, o que é recomendado para aplicações em produção, já que o armazenamento em memória (MemoryStore) não é recomendado para produção, pois não é escalável e pode causar problemas de memória.
     keyGenerator: (req) => {
         if(req.session && req.session.user) return req.session.user
@@ -38,7 +39,7 @@ export const autenticacaoLimit = rateLimit({
     legacyHeaders: false,
     store: new RedisStore({
         sendCommand: (...args) => client.sendCommand(args),
-        prefix: 'authenticationLimit:'
+        prefix: 'ratelimit:authentication:'
     }), // Onde armazenar os dados do rate limit, neste caso usando Redis, o que é recomendado para aplicações em produção, já que o armazenamento em memória (MemoryStore) não é recomendado para produção, pois não é escalável e pode causar problemas de memória.
     keyGenerator: (req) => {
         if(req.session && req.session.user) return req.session.user
@@ -64,6 +65,7 @@ export const Oauth2UrlLimit = rateLimit({
     legacyHeaders: false,
     store: new RedisStore({
         sendCommand: (...args) => client.sendCommand(args),
+        prefix: 'ratelimit:oauth2Url:'
     }), // Onde armazenar os dados do rate limit, neste caso usando Redis, o que é recomendado para aplicações em produção, já que o armazenamento em memória (MemoryStore) não é recomendado para produção, pois não é escalável e pode causar problemas de memória.
     keyGenerator: (req) => {
         if(req.session && req.session.user) return req.session.user
@@ -90,6 +92,7 @@ export const Oauth2AuthenticationLimit = rateLimit({
     legacyHeaders: false,
     store: new RedisStore({
         sendCommand: (...args) => client.sendCommand(args),
+        prefix: 'ratelimit:oauth2:'
     }), // Onde armazenar os dados do rate limit, neste caso usando Redis, o que é recomendado para aplicações em produção, já que o armazenamento em memória (MemoryStore) não é recomendado para produção, pois não é escalável e pode causar problemas de memória.
     keyGenerator: (req) => {
         if(req.session && req.session.user) return req.session.user
@@ -114,6 +117,7 @@ export const verifyEmailLimit = rateLimit({
     legacyHeaders: false,
     store: new RedisStore({
         sendCommand: (...args) => client.sendCommand(args),
+        prefix: 'ratelimit:verifyEmail:'
     }), // Onde armazenar os dados do rate limit, neste caso usando Redis, o que é recomendado para aplicações em produção, já que o armazenamento em memória (MemoryStore) não é recomendado para produção, pois não é escalável e pode causar problemas de memória.
     keyGenerator: (req) => {
         if(req.session && req.session.user) return req.session.user

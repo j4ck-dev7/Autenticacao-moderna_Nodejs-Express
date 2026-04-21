@@ -102,8 +102,8 @@ describe('Slow Down Middleware - authenticationSlowDown', () => {
         expect(authenticationSlowDown.options.store).toBeDefined();
     });
 
-    test('Deve usar prefixo "slowdown:" no Redis', () => {
-        expect(authenticationSlowDown.options.store.prefix).toBe('slowdown:');
+    test('Deve usar prefixo "slowdown:authentication:" no Redis', () => {
+        expect(authenticationSlowDown.options.store.prefix).toBe('slowdown:authentication:');
     });
 
     test('Deve retornar user ID como chave se usuário autenticado', () => {
@@ -220,7 +220,7 @@ describe('Slow Down Middleware - createUserSlowDown', () => {
     });
 
     test('Deve usar prefixo correto no Redis', () => {
-        expect(createUserSlowDown.options.store.prefix).toBe('slowdown:');
+        expect(createUserSlowDown.options.store.prefix).toBe('slowdown:createUser:');
     });
 
     test('Deve ter handler personalizado', () => {
