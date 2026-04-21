@@ -387,6 +387,8 @@ npm test -- tests/authMiddleware.test.js
 ```
 - ✅ Valida se usuário está autenticado
 - ✅ Retorna 401 se sessão não existir
+- ✅ Retorna 401 se o usuário não existir
+- ✅ Retorna 401 se o usuário não é verificado
 - ✅ Loga eventos de acesso
 - ✅ Tratamento de erros internos
 
@@ -522,29 +524,5 @@ Todos os testes contêm comentários explicando:
 
 ## 📄 Licença
 Este projeto está licenciado sob a MIT License - veja o arquivo [LICENSE](LICENSE) para mais detalhes.
-
----
-
-## 🔮 Funcionalidades Futuras
-
-### � Autenticação com Múltiplos Provedores OAuth2
-- **GitHub**: Login via GitHub
-- **Microsoft**: Login via Microsoft/Azure
-- **Apple**: Autenticação com Sign in with Apple
-
-### 📱 Autenticação Multifator (MFA)
-- TOTP/Authenticator App
-- SMS/Email as segundo fator
-
-### 👥 Gerenciamento de Usuários
-- Perfil de usuário editável
-- Avatar/foto de perfil
-- Histórico de login
-- Atividades da conta
-
-### 🔔 Notificações
-- Alertas de login
-- Mudanças de senha
-- Tentativas de acesso suspeitas
 
 **Contribuições são bem-vindas!** Para questões, sugestões ou relatórios de bugs, abra uma issue no repositório.
