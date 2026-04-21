@@ -1,6 +1,7 @@
 import { logger } from '../config/logger.js';
+import { findUserByIdVerified } from '../repositories/userRepository.js';
 
-export const Auth = (req, res, next) => {
+export const Auth = async (req, res, next) => {
     try {
         if(!req.session.user) { 
             logger.info('Acesso negado - token de autenticação ausente', {
@@ -9,6 +10,26 @@ export const Auth = (req, res, next) => {
             });
 
             return res.status(401).json({ message: 'Logue ou registre-se para acessar' }) 
+        }
+
+        const usuario = await findUserByIdVerified(req.session.user);
+
+        if(!usuario) {
+            logger.info('Acesso negado - usuário não encontrado', {
+                usuarioId: req.session.user,
+                ip: req.ip
+            });
+
+            return res.status(401).json({ message: 'Usuário não encontrado' });
+        }
+
+        if (!usuario.isVerified) {
+            logger.info('Acesso negado - usuário não verificado', {
+                usuarioId: req.session.user,
+                ip: req.ip
+            });
+
+            return res.status(401).json({ message: 'Acesso negado. Verifique sua conta.' });
         }
 
         logger.info('Acesso autorizado - token de autenticação válido', {
