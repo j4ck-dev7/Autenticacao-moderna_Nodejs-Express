@@ -93,10 +93,115 @@ GOOGLE_REFRESH_TOKEN=Token-gerado-no-oauthplayground
 EMAIL_VERIFICATION_SECRET=sua-chave-secreta-para-tokens-verificacao
 ```
 
-> ⚠️ **Importante - Email**:
-> - Para Gmail: Use [Google App Passwords](https://support.google.com/accounts/answer/185833) em vez da senha de conta
-> - Para outros serviços: Use credenciais correspondentes (SendGrid, Mailgun, etc.)
-> - Em produção, use um gerenciador de segredos como HashiCorp Vault, AWS Secrets Manager ou Azure Key Vault
+## 📧 Configuração de Email com OAuth2 (Nodemailer + Gmail)
+
+Este projeto usa **OAuth2 com Nodemailer** para enviar emails de forma segura. Siga o passo a passo abaixo:
+
+### Passo 1️⃣: Criar Conta no Google Cloud Console (se não tiver)
+
+1. Acesse [Google Cloud Console](https://console.cloud.google.com/)
+2. Clique em **"Criar Projeto"** ou selecione um existente
+3. Dê um nome ao projeto (ex: "Autenticacao-Moderna")
+4. Clique em **"Criar"** e aguarde a criação
+
+### Passo 2️⃣: Ativar Gmail API
+
+1. No dashboard do Google Cloud Console, procure por **"APIs e Serviços"** na barra lateral
+2. Clique em **"Ativar APIs e Serviços"**
+3. Procure por **"Gmail API"**
+4. Clique em **"Gmail API"** e pressione **"Ativar"**
+5. Aguarde a ativação (pode levar alguns segundos)
+
+### Passo 3️⃣: Criar Credenciais OAuth2
+
+1. No menu lateral, acesse **"Credenciais"**
+2. Clique em **"+ Criar Credenciais"** no topo
+3. Selecione **"OAuth 2.0 ID do Cliente"**
+4. Se solicitado, configure a tela de consentimento OAuth2:
+   - Tipo de usuário: **"Externo"**
+   - Clique em **"Criar"**
+   - Preencha os campos obrigatórios:
+     - Nome do app: "Autenticacao-Moderna"
+     - Email de suporte: Seu email Google
+   - Clique em **"Salvar e continuar"** até completar
+5. De volta em "Credenciais", clique novamente em **"+ Criar Credenciais"** > **"OAuth 2.0 ID do Cliente"**
+6. Tipo de aplicação: **"Aplicativo Web"**
+7. Configurar URIs de redirecionamento:
+   - Clique em **"Adicionar URI"**
+   - Adicione: `http://localhost:5000/api/user/Oauth/signUp`
+   - Clique em **"Adicionar URI"** novamente
+   - Adicione: `http://localhost:5000/api/user/Oauth/signIn`
+   - **Em produção, substitua `localhost:5000` pela URL da aplicação**
+8. Clique em **"Criar"**
+9. Uma janela modal aparecerá com suas credenciais. **Guarde o `Client ID` e `Client Secret`**:
+   - `GOOGLE_CLIENT_ID` = Client ID
+   - `GOOGLE_CLIENT_SECRET` = Client Secret
+
+### Passo 4️⃣: Obter Refresh Token no OAuth 2.0 Playground
+
+1. Acesse [Google OAuth 2.0 Playground](https://developers.google.com/oauthplayground)
+2. No canto superior direito, clique em **⚙️ (engrenagem)** > **"Configurações"**
+3. Marque a opção **"Use your own OAuth credentials"** (Usar suas próprias credenciais OAuth)
+4. Clique em **"Fechar"**
+5. Agora, você precisa autorizar a Gmail API:
+   - Na coluna esquerda, procure por **"Gmail API v1"**
+   - Expanda e selecione **`https://www.googleapis.com/auth/gmail.send`** (para enviar emails)
+   - Clique em **"Autorizar APIs"**
+6. Uma janela de login do Google aparecerá:
+   - Faça login com sua conta Google
+   - Clique em **"Permitir"** quando solicitado a conceder acesso
+7. Na seção **"Authorization code"**, clique em **"Exchange authorization code for tokens"**
+8. Uma janela aparecerá com o **"Refresh Token"**:
+   - Copie o valor do **`refresh_token`**
+   - Este é seu `GOOGLE_REFRESH_TOKEN`
+
+### Passo 5️⃣: Configurar as Variáveis de Ambiente
+
+No arquivo `.env` na raiz do projeto, configure:
+
+```env
+# Email (Nodemailer)
+SMTP_USER=seu-email@gmail.com
+GOOGLE_CLIENT_ID=seu-client-id-do-passo-3
+GOOGLE_CLIENT_SECRET=seu-client-secret-do-passo-3
+GOOGLE_REFRESH_TOKEN=seu-refresh-token-do-passo-4
+EMAIL_VERIFICATION_SECRET=sua-chave-secreta-para-tokens-verificacao
+```
+
+**Onde:**
+- `SMTP_USER`: Seu email Gmail completo (exemplo: `seu-email@gmail.com`)
+- `GOOGLE_CLIENT_ID`: Obtido no Passo 3
+- `GOOGLE_CLIENT_SECRET`: Obtido no Passo 3
+- `GOOGLE_REFRESH_TOKEN`: Obtido no Passo 4
+- `EMAIL_VERIFICATION_SECRET`: Uma string aleatória de pelo menos 32 caracteres (ex: `sua-chave-super-secreta-com-32-chars-minimo`)
+
+### Passo 6️⃣: Testar a Configuração
+
+1. Inicie o servidor:
+   ```bash
+   npm start
+   ```
+
+2. Faça um signup para testar:
+   ```bash
+   curl -X POST http://localhost:5000/api/user/signUp \
+     -H "Content-Type: application/json" \
+     -d '{
+       "name": "Teste",
+       "email": "seu-email@example.com",
+       "password": "SenhaSegura123!@#"
+     }'
+   ```
+
+3. Verifique se recebeu o email de verificação
+4. Clique no link enviado por email para ativar a conta
+
+> ⚠️ **Dicas de Segurança em Produção**:
+> - Nunca commite o arquivo `.env` no repositório
+> - Use um gerenciador de segredos como **HashiCorp Vault**, **AWS Secrets Manager** ou **Azure Key Vault**
+> - Configure URLs de redirecionamento OAuth2 com a URL real de produção
+> - Use variáveis de ambiente fornecidas pelo seu provedor de hospedagem
+> - Monitore as atividades suspeitas na conta Google
 ## 🔐 Autenticação
 
 ### 1️⃣ Autenticação Local (Email e Senha)
