@@ -35,6 +35,10 @@ jest.unstable_mockModule('bcryptjs', () => ({
             // Mock que simula um hash real
             return `$2a$10$hashed_${password}`;
         }),
+        hash: jest.fn(async (password) => {
+            // Mock que simula um hash real de forma assíncrona
+            return `$2a$10$hashed_${password}`;
+        }),
         compare: jest.fn(async (password, hash) => {
             // Mock que verifica se o hash corresponde à senha
             return hash === `$2a$10$hashed_${password}`;
@@ -76,6 +80,22 @@ jest.unstable_mockModule('../src/config/nodemailer.js', () => ({
     }
 }));
 
+jest.unstable_mockModule('../src/utils/redisLoginAttempts.js', () => ({
+    getLoginAttempts: jest.fn(),
+    incrementLoginAttempts: jest.fn(),
+    resetLoginAttempts: jest.fn(),
+    isLockedOut: jest.fn(),
+    getResetPasswordToken: jest.fn(),
+    setResetPasswordToken: jest.fn(),
+    deleteResetPasswordToken: jest.fn()
+}));
+
+jest.unstable_mockModule('../src/utils/tokenGenerator.js', () => ({
+    generateVerificationCode: jest.fn(() => '123456'),
+    generateSecureToken: jest.fn(() => 'secure_token_random_32_bytes'),
+    generateUUID: jest.fn(() => 'uuid-123-456-789')
+}));
+
 // Imports após mocks
 const { 
     VerifyEmailExists, 
@@ -103,8 +123,26 @@ const {
     registerUser,
     loginUser,
     verifyEmail,
-    resetPassword
+    resetPassword,
+    requestPasswordReset,
+    validatePasswordResetToken
 } = await import('../src/services/userService.js');
+
+const {
+    getLoginAttempts,
+    incrementLoginAttempts,
+    resetLoginAttempts,
+    isLockedOut,
+    getResetPasswordToken,
+    setResetPasswordToken,
+    deleteResetPasswordToken
+} = await import('../src/utils/redisLoginAttempts.js');
+
+const {
+    generateVerificationCode,
+    generateSecureToken,
+    generateUUID
+} = await import('../src/utils/tokenGenerator.js');
 
 const objUtill = {
     _id: '69e216577e9f01e10a08eb92',
@@ -288,7 +326,9 @@ describe('User Service - Login', () => {
     });
 
     test('Deve lançar erro quando email não existe', async () => {
+        const { incrementLoginAttempts } = await import('../src/utils/redisLoginAttempts.js');
         findUserByEmail.mockResolvedValue(null);
+        incrementLoginAttempts.mockResolvedValue({ attempts: 1 });
 
         await expect(
             loginUser('nonexistent@example.com', 'TestPass123!@#', '192.168.1.1')
@@ -298,6 +338,7 @@ describe('User Service - Login', () => {
     });
 
     test('Deve lançar erro quando senha está incorreta', async () => {
+        const { incrementLoginAttempts } = await import('../src/utils/redisLoginAttempts.js');
         const userData = {
             _id: 'user_id_123',
             email: 'user@example.com',
@@ -307,10 +348,13 @@ describe('User Service - Login', () => {
 
         findUserByEmail.mockResolvedValue(userData);
         bcrypt.default.compare.mockResolvedValue(false);
+        incrementLoginAttempts.mockResolvedValue({ attempts: 2 });
 
         await expect(
             loginUser('user@example.com', 'WrongPassword', '192.168.1.1')
         ).rejects.toThrow('Email ou senha incorretos');
+
+        expect(logger.warn).toHaveBeenCalled();
     });
 
     test('Deve lançar erro quando email não foi verificado', async () => {
@@ -326,6 +370,17 @@ describe('User Service - Login', () => {
         await expect(
             loginUser('user@example.com', 'TestPass123!@#', '192.168.1.1')
         ).rejects.toThrow('Email não verificado');
+    });
+
+    test('Deve lançar erro quando usuário está bloqueado por muitas tentativas', async () => {
+        const { isLockedOut } = await import('../src/utils/redisLoginAttempts.js');
+        isLockedOut.mockResolvedValue(true);
+
+        await expect(
+            loginUser('locked@example.com', 'TestPass123!@#', '192.168.1.1')
+        ).rejects.toThrow('Usuário bloqueado por muitas tentativas');
+
+        expect(logger.warn).toHaveBeenCalled();
     });
 });
 
@@ -485,5 +540,252 @@ describe('User Service - Reset Password', () => {
         await expect(
             resetPassword('SamePass123!@#', 'SamePass123!@#', 'SamePass123!@#', 'user_id_123', '192.168.1.1')
         ).rejects.toThrow('A nova senha deve ser diferente da senha atual');
+    });
+});
+
+describe('User Service - Request Password Reset', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        process.env.RESET_PASSWORD_SECRET = 'test_reset_secret';
+        process.env.SMTP_USER = 'test@email.com';
+    });
+
+    test('Deve solicitar reset de senha com sucesso', async () => {
+        const userData = {
+            _id: 'user_id_123',
+            name: 'João Silva',
+            email: 'joao@example.com'
+        };
+
+        findUserByEmail.mockResolvedValue(userData);
+
+        const result = await requestPasswordReset('joao@example.com', '192.168.1.1');
+
+        expect(findUserByEmail).toHaveBeenCalledWith('joao@example.com');
+        expect(generateVerificationCode).toHaveBeenCalled();
+        expect(jwt.default.sign).toHaveBeenCalledWith(
+            { id: userData._id, email: userData.email },
+            'test_reset_secret',
+            { expiresIn: 1000 * 60 * 15 }
+        );
+        expect(setResetPasswordToken).toHaveBeenCalled();
+        expect(transporter.sendMail).toHaveBeenCalled();
+        expect(result.message).toBe('Email de reset de senha enviado com sucesso');
+        expect(logger.info).toHaveBeenCalled();
+    });
+
+    test('Deve incluir código e token no email enviado', async () => {
+        const userData = {
+            _id: 'user_id_456',
+            name: 'Maria',
+            email: 'maria@example.com'
+        };
+
+        findUserByEmail.mockResolvedValue(userData);
+
+        await requestPasswordReset('maria@example.com', '192.168.1.1');
+
+        expect(transporter.sendMail).toHaveBeenCalledWith(
+            expect.objectContaining({
+                to: 'maria@example.com',
+                subject: 'Solicitação de Reset de Senha',
+                html: expect.stringContaining('123456')
+            })
+        );
+    });
+
+    test('Deve lançar erro quando email não existe', async () => {
+        findUserByEmail.mockResolvedValue(null);
+
+        await expect(
+            requestPasswordReset('nonexistent@example.com', '192.168.1.1')
+        ).rejects.toThrow('Email não encontrado');
+
+        expect(transporter.sendMail).not.toHaveBeenCalled();
+        expect(logger.warn).toHaveBeenCalled();
+    });
+
+    test('Deve armazenar token e código no Redis', async () => {
+        const userData = {
+            _id: 'user_id_789',
+            name: 'Carlos',
+            email: 'carlos@example.com'
+        };
+
+        findUserByEmail.mockResolvedValue(userData);
+
+        await requestPasswordReset('carlos@example.com', '192.168.1.1');
+
+        expect(setResetPasswordToken).toHaveBeenCalledWith(
+            'carlos@example.com',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZTIxNjU3N2U5ZjAxZTEwYTA4ZWI5MiIsImVtYWlsIjoidGVzdGUxOTZAZW1haWwuY29tIiwiaWF0IjoxNzc2NDI0NTM1LCJleHAiOjE3NzcwMjQ1MzV9.schkKITCCO22i3S2GjeaNEMXw4x3WLXsKEMuO0rEKvQ',
+            '123456'
+        );
+    });
+});
+
+describe('User Service - Validate Password Reset Token', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        process.env.RESET_PASSWORD_SECRET = 'test_reset_secret';
+    });
+
+    test('Deve resetar senha com token e código válidos', async () => {
+        const userData = {
+            _id: 'user_id_123',
+            email: 'user@example.com'
+        };
+
+        const storedData = {
+            token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZTIxNjU3N2U5ZjAxZTEwYTA4ZWI5MiIsImVtYWlsIjoidGVzdGUxOTZAZW1haWwuY29tIiwiaWF0IjoxNzc2NDI0NTM1LCJleHAiOjE3NzcwMjQ1MzV9.schkKITCCO22i3S2GjeaNEMXw4x3WLXsKEMuO0rEKvQ',
+            code: '123456'
+        };
+
+        findUserByEmail.mockResolvedValue(userData);
+        getResetPasswordToken.mockResolvedValue(storedData);
+        jwt.default.verify.mockImplementationOnce(() => ({
+            id: userData._id,
+            email: userData.email
+        }));
+        updateUserPassword.mockResolvedValue({ ...userData, password: '$2a$10$hashed_NewPass789!@#' });
+        deleteResetPasswordToken.mockResolvedValue(null);
+
+        const result = await validatePasswordResetToken(
+            storedData.token,
+            storedData.code,
+            'NewPass789!@#',
+            'NewPass789!@#',
+            'user@example.com',
+            '192.168.1.1'
+        );
+
+        expect(findUserByEmail).toHaveBeenCalledWith('user@example.com');
+        expect(getResetPasswordToken).toHaveBeenCalledWith('user@example.com');
+        expect(updateUserPassword).toHaveBeenCalledWith(userData._id, expect.stringContaining('hashed_'));
+        expect(deleteResetPasswordToken).toHaveBeenCalledWith('user@example.com');
+        expect(result.message).toBe('Senha resetada com sucesso');
+        expect(logger.info).toHaveBeenCalled();
+    });
+
+    test('Deve lançar erro quando senhas não coincidem', async () => {
+        const userData = {
+            _id: 'user_id_123',
+            email: 'user@example.com'
+        };
+
+        findUserByEmail.mockResolvedValue(userData);
+
+        await expect(
+            validatePasswordResetToken(
+                'token_123',
+                '123456',
+                'NewPass789!@#',
+                'DifferentPass789!@#',
+                'user@example.com',
+                '192.168.1.1'
+            )
+        ).rejects.toThrow('As senhas não coincidem');
+
+        expect(logger.warn).toHaveBeenCalled();
+    });
+
+    test('Deve lançar erro quando código é inválido', async () => {
+        const userData = {
+            _id: 'user_id_123',
+            email: 'user@example.com'
+        };
+
+        const storedData = {
+            token: 'valid_token',
+            code: '654321'
+        };
+
+        findUserByEmail.mockResolvedValue(userData);
+        getResetPasswordToken.mockResolvedValue(storedData);
+
+        await expect(
+            validatePasswordResetToken(
+                storedData.token,
+                '123456', // código diferente
+                'NewPass789!@#',
+                'NewPass789!@#',
+                'user@example.com',
+                '192.168.1.1'
+            )
+        ).rejects.toThrow('Código de verificação inválido');
+
+        expect(logger.warn).toHaveBeenCalled();
+        expect(updateUserPassword).not.toHaveBeenCalled();
+    });
+
+    test('Deve lançar erro quando token expirou', async () => {
+        const userData = {
+            _id: 'user_id_123',
+            email: 'user@example.com'
+        };
+
+        findUserByEmail.mockResolvedValue(userData);
+        getResetPasswordToken.mockResolvedValue(null); // Token não encontrado no Redis
+
+        await expect(
+            validatePasswordResetToken(
+                'expired_token',
+                '123456',
+                'NewPass789!@#',
+                'NewPass789!@#',
+                'user@example.com',
+                '192.168.1.1'
+            )
+        ).rejects.toThrow('Token expirado ou inválido');
+
+        expect(logger.warn).toHaveBeenCalled();
+    });
+
+    test('Deve lançar erro quando token JWT é inválido', async () => {
+        const userData = {
+            _id: 'user_id_123',
+            email: 'user@example.com'
+        };
+
+        const storedData = {
+            token: 'invalid_jwt_token',
+            code: '123456'
+        };
+
+        findUserByEmail.mockResolvedValue(userData);
+        getResetPasswordToken.mockResolvedValue(storedData);
+        jwt.default.verify.mockImplementationOnce(() => {
+            throw new Error('Token inválido');
+        });
+
+        await expect(
+            validatePasswordResetToken(
+                storedData.token,
+                storedData.code,
+                'NewPass789!@#',
+                'NewPass789!@#',
+                'user@example.com',
+                '192.168.1.1'
+            )
+        ).rejects.toThrow('Token inválido ou expirado');
+
+        expect(logger.warn).toHaveBeenCalled();
+    });
+
+    test('Deve lançar erro quando usuário não existe', async () => {
+        findUserByEmail.mockResolvedValue(null);
+
+        await expect(
+            validatePasswordResetToken(
+                'token_123',
+                '123456',
+                'NewPass789!@#',
+                'NewPass789!@#',
+                'nonexistent@example.com',
+                '192.168.1.1'
+            )
+        ).rejects.toThrow('Usuário não encontrado');
+
+        expect(logger.warn).toHaveBeenCalled();
     });
 });

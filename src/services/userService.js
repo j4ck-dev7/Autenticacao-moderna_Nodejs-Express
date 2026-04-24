@@ -15,6 +15,9 @@ import { OAuth2Client } from 'google-auth-library'
 import { logger } from "../config/logger.js";
 import jwt from "jsonwebtoken";
 import { transporter } from "../config/nodemailer.js";
+import { generateVerificationCode } from "../utils/tokenGenerator.js";
+import { setResetPasswordToken, deleteResetPasswordToken, getResetPasswordToken } from "../utils/redisLoginAttempts.js";
+import { incrementLoginAttempts, resetLoginAttempts, isLockedOut, getLoginAttempts } from "../utils/redisLoginAttempts.js";
 
 export const OauthRequestSignUp = (ip, state) => {
     logger.debug('Iniciando processo de geração de url para autenticação Oauth', { 
@@ -173,19 +176,42 @@ export const registerUser = async (name, email, password, ip) => {
 }
 
 export const loginUser = async (email, password, ip) => {
+    const inicio = Date.now();
+    
     logger.debug('Iniciando processo de login', {
         usuarioId: 'Desconecido',
         ip
     });
 
-    const user = await findUserByEmail(email);
-    if (!user) {
-        logger.warn('Tentativa de login com email não registrado', { 
+    // Verificar se o usuário está bloqueado por muitas tentativas de login
+    const locked = await isLockedOut(email);
+    if (locked) {
+        logger.warn('Tentativa de login para usuário bloqueado por muitas tentativas', {
             usuarioId: 'Desconecido',
+            email,
             ip
         });
+
+        throw new Error('Usuário bloqueado por muitas tentativas');
+    }
+
+    const user = await findUserByEmail(email);
+    if (!user) {
+        const duracao = Date.now() - inicio;
+        const loginAttemps = await incrementLoginAttempts(email);
         
-        throw new Error('Email ou senha incorretos');
+        logger.warn('Tentativa de login com credenciais incorretas', {
+            usuarioId: 'Desconecido',
+            email,
+            ip,
+            tentativas: loginAttemps.attempts,
+            duracao: `${duracao}ms`
+        });
+        
+        const error = new Error('Email ou senha incorretos');
+        error.attempts = loginAttemps.attempts;
+        error.remainingAttempts = 5 - loginAttemps.attempts;
+        throw error;
     }
 
     if(!user.isVerified){
@@ -200,12 +226,25 @@ export const loginUser = async (email, password, ip) => {
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (!passwordMatch) {
-        logger.warn('Tentativa de login com senha incorreta', { 
-            usuarioId: user._id,
-            ip
+        const duracao = Date.now() - inicio;
+        const loginAttemps = await incrementLoginAttempts(email);
+        
+        logger.warn('Tentativa de login com credenciais incorretas', {
+            usuarioId: 'Desconecido',
+            email,
+            ip,
+            tentativas: loginAttemps.attempts,
+            duracao: `${duracao}ms`
         });
-        throw new Error('Email ou senha incorretos');
+
+        const error = new Error('Email ou senha incorretos');
+        error.attempts = loginAttemps.attempts;
+        error.remainingAttempts = 5 - loginAttemps.attempts;
+        throw error;
     }
+
+    // Resetar tentativas de login ao sucesso
+    await resetLoginAttempts(email);
 
     logger.info('Usuário logado com sucesso', { 
         usuarioId: user._id,
@@ -302,4 +341,134 @@ export const resetPassword = async (newPassword, confirmPassword, password, id, 
     logger.info('Senha do usuário atualizada com sucesso', { usuarioId: id });
     
     return updatePassword;
+}
+
+export const requestPasswordReset = async (email, ip) => {
+    logger.debug('Iniciando processo de solicitação de reset de senha', { 
+        usuarioId: 'Desconecido', 
+        email,
+        ip
+    });
+
+    const user = await findUserByEmail(email);
+    if (!user) {
+        logger.warn('Solicitação de reset de senha para email não registrado', {
+            usuarioId: 'Desconecido',
+            email,
+            ip
+        });
+        throw new Error('Email não encontrado');
+    }
+
+    const verificationCode = generateVerificationCode();
+    const resetToken = jwt.sign(
+        { id: user._id, email: user.email },
+        process.env.RESET_PASSWORD_SECRET,
+        { expiresIn: 1000 * 60 * 15 }
+    );
+
+    await setResetPasswordToken(email, resetToken, verificationCode);
+
+    const resetLink = `Código de verificação: ${verificationCode}`;
+    
+    await transporter.sendMail({
+        from: process.env.SMTP_USER,
+        to: email,
+        subject: 'Solicitação de Reset de Senha',
+        html: `<p>Olá ${user.name},</p>
+               <p>Recebemos uma solicitação para resetar sua senha. Use o código abaixo para prosseguir com o reset:</p>
+               <p><strong>Código de Verificação: ${verificationCode}</strong></p>
+               <p>Este código expira em 15 minutos.</p>
+               <p>Se você não solicitou este reset, ignore este email.</p>
+               <p><strong>Token de Segurança:</strong> ${resetToken}</p>`
+    });
+
+    logger.info('Email de reset de senha enviado com sucesso', { 
+        usuarioId: user._id, 
+        email,
+        ip
+    });
+
+    return { message: 'Email de reset de senha enviado com sucesso' };
+}
+
+export const validatePasswordResetToken = async (token, code, newPassword, confirmPassword, email, ip) => {
+    logger.debug('Iniciando processo de validação de token de reset de senha', {
+        usuarioId: 'Desconecido',
+        email,
+        ip
+    });
+
+    if (newPassword !== confirmPassword) {
+        logger.warn('Senhas não coincidem no reset de senha', {
+            usuarioId: 'Desconecido',
+            email,
+            ip
+        });
+        throw new Error('As senhas não coincidem');
+    }
+
+    const user = await findUserByEmail(email);
+    if (!user) {
+        logger.warn('Usuário não encontrado para validação de reset de senha', {
+            usuarioId: 'Desconecido',
+            email,
+            ip
+        });
+        throw new Error('Usuário não encontrado');
+    }
+
+    // Recuperar dados armazenados no Redis
+    const storedData = await getResetPasswordToken(email);
+    if (!storedData) {
+        logger.warn('Token de reset de senha expirado ou não encontrado', {
+            usuarioId: user._id,
+            email,
+            ip
+        });
+        throw new Error('Token expirado ou inválido');
+    }
+
+    // Validar código de verificação
+    if (storedData.code !== code) {
+        logger.warn('Código de verificação inválido no reset de senha', {
+            usuarioId: user._id,
+            email,
+            ip
+        });
+        throw new Error('Código de verificação inválido');
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.RESET_PASSWORD_SECRET);
+        if (decoded.id !== user._id.toString() || decoded.email !== email) {
+            logger.warn('Token de reset de senha inválido (dados inconsistentes)', {
+                usuarioId: user._id,
+                email,
+                ip
+            });
+            throw new Error('Token inválido');
+        }
+    } catch (error) {
+        logger.warn('Erro ao verificar token de reset de senha', {
+            usuarioId: user._id,
+            email,
+            ip,
+            erro: error.message
+        });
+        throw new Error('Token inválido ou expirado');
+    }
+
+    await deleteResetPasswordToken(email);
+
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+    await updateUserPassword(user._id, newPasswordHash);
+
+    logger.info('Senha do usuário resetada com sucesso', { 
+        usuarioId: user._id, 
+        email,
+        ip
+    });
+
+    return { message: 'Senha resetada com sucesso' };
 }

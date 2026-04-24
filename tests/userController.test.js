@@ -9,7 +9,9 @@ jest.unstable_mockModule('../src/services/userService.js', () => ({
     OauthRequestSignIn: jest.fn(),
     loginWithOauth: jest.fn(),
     resetPassword: jest.fn(),
-    verifyEmail: jest.fn()
+    verifyEmail: jest.fn(),
+    requestPasswordReset: jest.fn(),
+    validatePasswordResetToken: jest.fn()
 }));
 
 jest.unstable_mockModule('../src/config/logger.js', () => ({
@@ -19,6 +21,13 @@ jest.unstable_mockModule('../src/config/logger.js', () => ({
         warn: jest.fn(),
         error: jest.fn()
     }
+}));
+
+jest.unstable_mockModule('../src/utils/redisLoginAttempts.js', () => ({
+    getLoginAttempts: jest.fn(),
+    incrementLoginAttempts: jest.fn(),
+    resetLoginAttempts: jest.fn(),
+    isLockedOut: jest.fn()
 }));
 
 jest.unstable_mockModule('node:crypto', () => ({
@@ -39,7 +48,9 @@ const {
     verifyUser,
     signIn,
     changePassword,
-    mainPage
+    mainPage,
+    requestResetPassword,
+    resetPasswordWithToken
 } = await import('../src/controllers/userController.js');
 
 const {
@@ -50,10 +61,18 @@ const {
     OauthRequestSignIn,
     loginWithOauth,
     resetPassword,
-    verifyEmail
+    verifyEmail,
+    requestPasswordReset,
+    validatePasswordResetToken
 } = await import('../src/services/userService.js');
 
 const { logger } = await import('../src/config/logger.js');
+
+const {
+    isLockedOut,
+    incrementLoginAttempts,
+    resetLoginAttempts
+} = await import('../src/utils/redisLoginAttempts.js');
 
 // Helper para criar mock de request e response
 function createMockReqRes() {
@@ -75,6 +94,10 @@ function createMockReqRes() {
         }),
         json: jest.fn(function(data) {
             this.jsonData = data;
+            return this;
+        }),
+        send: jest.fn(function(html) {
+            this.htmlData = html;
             return this;
         }),
         redirect: jest.fn(function(url) {
@@ -376,13 +399,17 @@ describe('User Controller - Sign In', () => {
             password: 'WrongPassword'
         };
 
-        loginUser.mockRejectedValue(new Error('Email ou senha incorretos'));
+        const error = new Error('Email ou senha incorretos');
+        error.attempts = 1;
+        error.remainingAttempts = 4;
+        loginUser.mockRejectedValue(error);
 
         await signIn(req, res);
 
         expect(res.status).toHaveBeenCalledWith(401);
         expect(res.json).toHaveBeenCalledWith({
-            error: 'Email ou senha incorretos'
+            error: 'Email ou senha incorretos',
+            attemptsRemaining: 4
         });
     });
 
@@ -401,6 +428,62 @@ describe('User Controller - Sign In', () => {
         expect(res.json).toHaveBeenCalledWith({
             error: 'Email não verificado'
         });
+    });
+
+    test('Deve incrementar tentativas de login ao falhar', async () => {
+        const { req, res } = createMockReqRes();
+        req.body = {
+            email: 'user@example.com',
+            password: 'WrongPassword'
+        };
+
+        const error = new Error('Email ou senha incorretos');
+        error.attempts = 2;
+        error.remainingAttempts = 3;
+        loginUser.mockRejectedValue(error);
+
+        await signIn(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Email ou senha incorretos',
+            attemptsRemaining: 3
+        });
+    });
+
+    test('Deve bloquear usuário após 5 tentativas falhas', async () => {
+        const { req, res } = createMockReqRes();
+        req.body = {
+            email: 'user@example.com',
+            password: 'WrongPassword'
+        };
+
+        loginUser.mockRejectedValue(new Error('Usuário bloqueado por muitas tentativas'));
+
+        await signIn(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res.send).toHaveBeenCalled();
+        expect(logger.warn).toHaveBeenCalled();
+    });
+
+    test('Deve resetar tentativas após login bem-sucedido', async () => {
+        const { req, res } = createMockReqRes();
+        req.body = {
+            email: 'user@example.com',
+            password: 'TestPass123!@#'
+        };
+
+        loginUser.mockResolvedValue({
+            _id: 'user_id_123',
+            email: 'user@example.com',
+            name: 'Test User'
+        });
+
+        await signIn(req, res);
+
+        expect(req.session.user).toBe('user_id_123');
+        expect(res.redirect).toHaveBeenCalledWith('/api/user/main');
     });
 });
 
@@ -527,5 +610,172 @@ describe('User Controller - Main Page', () => {
         expect(() => {
             mainPage(req, res);
         }).toThrow();
+    });
+});
+
+describe('User Controller - Request Reset Password', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    test('Deve solicitar reset de senha com sucesso', async () => {
+        const { req, res } = createMockReqRes();
+        req.body = { email: 'user@example.com' };
+        
+        requestPasswordReset.mockResolvedValue({
+            message: 'Email de reset de senha enviado com sucesso'
+        });
+
+        await requestResetPassword(req, res);
+
+        expect(requestPasswordReset).toHaveBeenCalledWith('user@example.com', req.ip);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith({
+            message: 'Email de reset de senha enviado com sucesso'
+        });
+        expect(logger.info).toHaveBeenCalled();
+    });
+
+    test('Deve retornar 404 quando email não existe', async () => {
+        const { req, res } = createMockReqRes();
+        req.body = { email: 'nonexistent@example.com' };
+        
+        requestPasswordReset.mockRejectedValue(new Error('Email não encontrado'));
+
+        await requestResetPassword(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Email não encontrado'
+        });
+        expect(logger.warn).toHaveBeenCalled();
+    });
+
+    test('Deve retornar 500 em caso de erro no servidor', async () => {
+        const { req, res } = createMockReqRes();
+        req.body = { email: 'user@example.com' };
+        
+        requestPasswordReset.mockRejectedValue(new Error('Erro interno'));
+
+        await requestResetPassword(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(logger.error).toHaveBeenCalled();
+    });
+});
+
+describe('User Controller - Reset Password With Token', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    test('Deve resetar senha com token e código válidos', async () => {
+        const { req, res } = createMockReqRes();
+        req.body = {
+            email: 'user@example.com',
+            token: 'valid_token_123',
+            code: '123456',
+            newPassword: 'NewPass789!@#',
+            confirmPassword: 'NewPass789!@#'
+        };
+        
+        validatePasswordResetToken.mockResolvedValue({
+            message: 'Senha resetada com sucesso'
+        });
+
+        await resetPasswordWithToken(req, res);
+
+        expect(validatePasswordResetToken).toHaveBeenCalledWith(
+            'valid_token_123',
+            '123456',
+            'NewPass789!@#',
+            'NewPass789!@#',
+            'user@example.com',
+            req.ip
+        );
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith({
+            message: 'Senha resetada com sucesso'
+        });
+        expect(logger.info).toHaveBeenCalled();
+    });
+
+    test('Deve retornar 401 quando senhas não coincidem', async () => {
+        const { req, res } = createMockReqRes();
+        req.body = {
+            email: 'user@example.com',
+            token: 'token_123',
+            code: '123456',
+            newPassword: 'NewPass789!@#',
+            confirmPassword: 'DifferentPass789!@#'
+        };
+        
+        validatePasswordResetToken.mockRejectedValue(new Error('As senhas não coincidem'));
+
+        await resetPasswordWithToken(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'As senhas não coincidem'
+        });
+        expect(logger.warn).toHaveBeenCalled();
+    });
+
+    test('Deve retornar 401 quando código é inválido', async () => {
+        const { req, res } = createMockReqRes();
+        req.body = {
+            email: 'user@example.com',
+            token: 'token_123',
+            code: 'invalid_code',
+            newPassword: 'NewPass789!@#',
+            confirmPassword: 'NewPass789!@#'
+        };
+        
+        validatePasswordResetToken.mockRejectedValue(new Error('Código de verificação inválido'));
+
+        await resetPasswordWithToken(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Código de verificação inválido'
+        });
+    });
+
+    test('Deve retornar 401 quando token é inválido ou expirado', async () => {
+        const { req, res } = createMockReqRes();
+        req.body = {
+            email: 'user@example.com',
+            token: 'invalid_or_expired_token',
+            code: '123456',
+            newPassword: 'NewPass789!@#',
+            confirmPassword: 'NewPass789!@#'
+        };
+        
+        validatePasswordResetToken.mockRejectedValue(new Error('Token inválido ou expirado'));
+
+        await resetPasswordWithToken(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Token inválido ou expirado'
+        });
+    });
+
+    test('Deve retornar 500 em caso de erro no servidor', async () => {
+        const { req, res } = createMockReqRes();
+        req.body = {
+            email: 'user@example.com',
+            token: 'token_123',
+            code: '123456',
+            newPassword: 'NewPass789!@#',
+            confirmPassword: 'NewPass789!@#'
+        };
+        
+        validatePasswordResetToken.mockRejectedValue(new Error('Erro interno do servidor'));
+
+        await resetPasswordWithToken(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(500);
+        expect(logger.error).toHaveBeenCalled();
     });
 });

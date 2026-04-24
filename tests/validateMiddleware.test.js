@@ -14,7 +14,9 @@ jest.unstable_mockModule('../src/config/logger.js', () => ({
 const {
     signInValidate,
     signUpValidate,
-    changePasswordValidate
+    changePasswordValidate,
+    resetPasswordValidate,
+    requestResetPasswordValidate
 } = await import('../src/middlewares/validate.js');
 const { logger } = await import('../src/config/logger.js');
 
@@ -651,6 +653,394 @@ describe('Validate Middleware - Change Password', () => {
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.json).toHaveBeenCalledWith({
             error: 'A nova senha deve conter no mínimo 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais'
+        });
+        expect(next).not.toHaveBeenCalled();
+    });
+});
+
+describe('Validate Middleware - Request Reset Password', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    test('Deve validar solicitação de reset com email válido', () => {
+        const req = {
+            body: {
+                email: 'user@example.com'
+            },
+            ip: '192.168.1.1',
+            originalUrl: '/api/user/request-reset-password',
+            method: 'POST'
+        };
+
+        const res = {
+            status: jest.fn(function(code) {
+                this.statusCode = code;
+                return this;
+            }),
+            json: jest.fn(function(data) {
+                this.jsonData = data;
+                return this;
+            })
+        };
+
+        const next = jest.fn();
+
+        requestResetPasswordValidate(req, res, next);
+
+        expect(next).toHaveBeenCalledTimes(1);
+        expect(logger.info).toHaveBeenCalled();
+    });
+
+    test('Deve rejeitar solicitação de reset sem email', () => {
+        const req = {
+            body: {
+                email: ''
+            },
+            ip: '192.168.1.1',
+            originalUrl: '/api/user/request-reset-password',
+            method: 'POST'
+        };
+
+        const res = {
+            status: jest.fn(function(code) {
+                this.statusCode = code;
+                return this;
+            }),
+            json: jest.fn(function(data) {
+                this.jsonData = data;
+                return this;
+            })
+        };
+
+        const next = jest.fn();
+
+        requestResetPasswordValidate(req, res, next);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Preencha os campos obrigatórios'
+        });
+        expect(next).not.toHaveBeenCalled();
+        expect(logger.warn).toHaveBeenCalled();
+    });
+
+    test('Deve rejeitar email inválido', () => {
+        const req = {
+            body: {
+                email: 'invalid_email'
+            },
+            ip: '192.168.1.1',
+            originalUrl: '/api/user/request-reset-password',
+            method: 'POST'
+        };
+
+        const res = {
+            status: jest.fn(function(code) {
+                this.statusCode = code;
+                return this;
+            }),
+            json: jest.fn(function(data) {
+                this.jsonData = data;
+                return this;
+            })
+        };
+
+        const next = jest.fn();
+
+        requestResetPasswordValidate(req, res, next);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'O email deve ser um email válido'
+        });
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    test('Deve rejeitar email muito curto', () => {
+        const req = {
+            body: {
+                email: 'test@ex.co'
+            },
+            ip: '192.168.1.1',
+            originalUrl: '/api/user/request-reset-password',
+            method: 'POST'
+        };
+
+        const res = {
+            status: jest.fn(function(code) {
+                this.statusCode = code;
+                return this;
+            }),
+            json: jest.fn(function(data) {
+                this.jsonData = data;
+                return this;
+            })
+        };
+
+        const next = jest.fn();
+
+        requestResetPasswordValidate(req, res, next);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'O email deve conter no mínimo 13 caracteres'
+        });
+        expect(next).not.toHaveBeenCalled();
+    });
+});
+
+describe('Validate Middleware - Reset Password', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    test('Deve validar reset de senha com dados válidos', () => {
+        const req = {
+            body: {
+                email: 'user@example.com',
+                token: 'valid_jwt_token_123',
+                code: '123456',
+                newPassword: 'NewPass789!@',
+                confirmPassword: 'NewPass789!@'
+            },
+            ip: '192.168.1.1',
+            originalUrl: '/api/user/reset-password',
+            method: 'PATCH'
+        };
+
+        const res = {
+            status: jest.fn(function(code) {
+                this.statusCode = code;
+                return this;
+            }),
+            json: jest.fn(function(data) {
+                this.jsonData = data;
+                return this;
+            })
+        };
+
+        const next = jest.fn();
+
+        resetPasswordValidate(req, res, next);
+
+        expect(next).toHaveBeenCalled();
+        expect(logger.info).toHaveBeenCalled();
+    });
+
+    test('Deve rejeitar reset sem email', () => {
+        const req = {
+            body: {
+                email: '',
+                token: 'token_123',
+                code: '123456',
+                newPassword: 'NewPass789!@#',
+                confirmPassword: 'NewPass789!@#'
+            },
+            ip: '192.168.1.1',
+            originalUrl: '/api/user/reset-password',
+            method: 'PATCH'
+        };
+
+        const res = {
+            status: jest.fn(function(code) {
+                this.statusCode = code;
+                return this;
+            }),
+            json: jest.fn(function(data) {
+                this.jsonData = data;
+                return this;
+            })
+        };
+
+        const next = jest.fn();
+
+        resetPasswordValidate(req, res, next);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Preencha os campos obrigatórios'
+        });
+        expect(next).not.toHaveBeenCalled();
+        expect(logger.warn).toHaveBeenCalled();
+    });
+
+    test('Deve rejeitar reset sem token', () => {
+        const req = {
+            body: {
+                email: 'user@example.com',
+                token: '',
+                code: '123456',
+                newPassword: 'NewPass789!@#',
+                confirmPassword: 'NewPass789!@#'
+            },
+            ip: '192.168.1.1',
+            originalUrl: '/api/user/reset-password',
+            method: 'PATCH'
+        };
+
+        const res = {
+            status: jest.fn(function(code) {
+                this.statusCode = code;
+                return this;
+            }),
+            json: jest.fn(function(data) {
+                this.jsonData = data;
+                return this;
+            })
+        };
+
+        const next = jest.fn();
+
+        resetPasswordValidate(req, res, next);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Token ausente'
+        });
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    test('Deve rejeitar reset sem código de verificação', () => {
+        const req = {
+            body: {
+                email: 'user@example.com',
+                token: 'token_123',
+                code: '',
+                newPassword: 'NewPass789!@#',
+                confirmPassword: 'NewPass789!@#'
+            },
+            ip: '192.168.1.1',
+            originalUrl: '/api/user/reset-password',
+            method: 'PATCH'
+        };
+
+        const res = {
+            status: jest.fn(function(code) {
+                this.statusCode = code;
+                return this;
+            }),
+            json: jest.fn(function(data) {
+                this.jsonData = data;
+                return this;
+            })
+        };
+
+        const next = jest.fn();
+
+        resetPasswordValidate(req, res, next);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'Código de verificação ausente'
+        });
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    test('Deve rejeitar senhas que não coincidem', () => {
+        const req = {
+            body: {
+                email: 'user@example.com',
+                token: 'token_123',
+                code: '123456',
+                newPassword: 'NewPass789!@',
+                confirmPassword: 'DifferentPass789!@'
+            },
+            ip: '192.168.1.1',
+            originalUrl: '/api/user/reset-password',
+            method: 'PATCH'
+        };
+
+        const res = {
+            status: jest.fn(function(code) {
+                this.statusCode = code;
+                return this;
+            }),
+            json: jest.fn(function(data) {
+                this.jsonData = data;
+                return this;
+            })
+        };
+
+        const next = jest.fn();
+
+        resetPasswordValidate(req, res, next);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'As senhas não coincidem'
+        });
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    test('Deve rejeitar senha fraca', () => {
+        const req = {
+            body: {
+                email: 'user@example.com',
+                token: 'token_123',
+                code: '123456',
+                newPassword: 'weakpass',
+                confirmPassword: 'weakpass'
+            },
+            ip: '192.168.1.1',
+            originalUrl: '/api/user/reset-password',
+            method: 'PATCH'
+        };
+
+        const res = {
+            status: jest.fn(function(code) {
+                this.statusCode = code;
+                return this;
+            }),
+            json: jest.fn(function(data) {
+                this.jsonData = data;
+                return this;
+            })
+        };
+
+        const next = jest.fn();
+
+        resetPasswordValidate(req, res, next);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'A nova senha deve conter no mínimo 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais'
+        });
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    test('Deve rejeitar email inválido', () => {
+        const req = {
+            body: {
+                email: 'invalid_email',
+                token: 'token_123',
+                code: '123456',
+                newPassword: 'NewPass789!@',
+                confirmPassword: 'NewPass789!@'
+            },
+            ip: '192.168.1.1',
+            originalUrl: '/api/user/reset-password',
+            method: 'PATCH'
+        };
+
+        const res = {
+            status: jest.fn(function(code) {
+                this.statusCode = code;
+                return this;
+            }),
+            json: jest.fn(function(data) {
+                this.jsonData = data;
+                return this;
+            })
+        };
+
+        const next = jest.fn();
+
+        resetPasswordValidate(req, res, next);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+            error: 'O email deve ser um email válido'
         });
         expect(next).not.toHaveBeenCalled();
     });

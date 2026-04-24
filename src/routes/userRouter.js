@@ -17,5 +17,7 @@ router.get('/verify-email', slowDown.verifyEmailSlowDown, rateLimit.verifyEmailL
 router.post('/signUp', slowDown.createUserSlowDown, rateLimit.autenticacaoLimit, validate.signUpValidate, userController.signUp);
 router.post('/signIn', slowDown.authenticationSlowDown, rateLimit.autenticacaoLimit, validate.signInValidate, userController.signIn);
 router.post('/change-password', slowDown.authenticationSlowDown, rateLimit.autenticacaoLimit, Auth, validate.changePasswordValidate, userController.changePassword);
+router.post('/request-reset-password', slowDown.authenticationSlowDown, rateLimit.autenticacaoLimit, validate.requestResetPasswordValidate, userController.requestResetPassword);
+router.patch('/reset-password', slowDown.authenticationSlowDown, rateLimit.autenticacaoLimit, validate.resetPasswordValidate, userController.resetPasswordWithToken);
 
 export default router;

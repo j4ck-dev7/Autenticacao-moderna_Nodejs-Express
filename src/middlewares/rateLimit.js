@@ -30,11 +30,11 @@ export const mainPageLimit = rateLimit({
     }
 });
 
-// Em rotas Post para autenticação, o recomendado é de 3-5 requisições a cada 15 minutos, isso previne ataques de 
+// Em rotas Post para autenticação, o recomendado é de 3-6 requisições a cada 15 minutos, isso previne ataques de 
 // força bruta.
 export const autenticacaoLimit = rateLimit({
     windowMs: 60 * 1000,
-    limit: 5,
+    limit: 6,
     standardHeaders: true,
     legacyHeaders: false,
     store: new RedisStore({
