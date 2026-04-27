@@ -1,6 +1,7 @@
 import { registerUser, loginUser, registerWithOauth, OauthRequestSignIn, OauthRequestSignUp, loginWithOauth, resetPassword, verifyEmail, requestPasswordReset, validatePasswordResetToken } from "../services/userService.js";
 import { logger } from "../config/logger.js";
 import crypto from 'node:crypto';
+import { addUserSession } from "../utils/userSessions.js";
 
 const numberOfAttemps = [1, 2, 3, 4, 5];
 
@@ -102,6 +103,11 @@ export const signUpWithOauth = async (req, res) => {
                     return res.status(500).json({ message: 'Erro ao salvar sessão' });
                 };
 
+                // Registra a sessão no Redis para permitir revogação por usuário
+                addUserSession(req.session.user, req.sessionID).catch((e) => {
+                    logger.error('Erro ao gravar session id no Redis', e, { usuarioId: req.session?.user });
+                });
+
                 const duracao = Date.now() - inicio;
                 logger.info('Registro bem-sucedido', {
                     usuarioId: service._id,
@@ -167,6 +173,10 @@ export const signInWithOauth = async (req, res) => {
                     });
                     return res.status(500).json({ message: 'Erro ao salvar sessão' });
                 };
+
+                addUserSession(req.session.user, req.sessionID).catch((e) => {
+                    logger.error('Erro ao gravar session id no Redis', e, { usuarioId: req.session?.user });
+                });
 
                 const duracao = Date.now() - inicio;
                 logger.info('Login bem-sucedido', {
@@ -263,6 +273,10 @@ export const verifyUser = async (req, res) => {
                     return res.status(500).json({ message: 'Erro ao salvar sessão' });
                 };
 
+                addUserSession(req.session.user, req.sessionID).catch((e) => {
+                    logger.error('Erro ao gravar session id no Redis', e, { usuarioId: req.session?.user });
+                });
+
                 const duracao = Date.now() - inicio;
                 logger.info('Email verificado com sucesso', {
                     usuarioId: service._id,
@@ -323,6 +337,10 @@ export const signIn = async (req, res) => {
                     });
                     return res.status(500).json({ message: 'Erro ao salvar sessão' });
                 };
+
+                addUserSession(req.session.user, req.sessionID).catch((e) => {
+                    logger.error('Erro ao gravar session id no Redis', e, { usuarioId: req.session?.user });
+                });
 
                 const duracao = Date.now() - inicio;
                 logger.info('Login bem-sucedido', {

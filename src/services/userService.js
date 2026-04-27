@@ -18,6 +18,7 @@ import jwt from "jsonwebtoken";
 import { transporter } from "../config/nodemailer.js";
 import { generateVerificationCode } from "../utils/tokenGenerator.js";
 import { setResetPasswordToken, deleteResetPasswordToken, getResetPasswordToken, incrementLoginAttempts, resetLoginAttempts, isLockedOut, getLoginAttempts } from "../utils/redisLoginAttempts.js";
+import { revokeAllUserSessions } from "../utils/userSessions.js";
 
 export const OauthRequestSignUp = (ip, state) => {
     logger.debug('Iniciando processo de geração de url para autenticação Oauth', { 
@@ -338,6 +339,7 @@ export const resetPassword = async (newPassword, confirmPassword, password, id, 
     const newPasswordHash = await bcrypt.hashSync(newPassword);
 
     const updatePassword = await updateUserPassword(id, newPasswordHash);
+    await revokeAllUserSessions(id);
     await incrementUserSessionVersion(id);
     logger.info('Senha do usuário atualizada com sucesso e sessões anteriores invalidadas', { usuarioId: id });
     
@@ -474,6 +476,7 @@ export const validatePasswordResetToken = async (token, code, newPassword, confi
 
     const newPasswordHash = await bcrypt.hash(newPassword, 10);
     await updateUserPassword(user._id, newPasswordHash);
+    await revokeAllUserSessions(user._id);
     await incrementUserSessionVersion(user._id);
 
     logger.info('Senha do usuário resetada com sucesso e sessões anteriores invalidadas', { 

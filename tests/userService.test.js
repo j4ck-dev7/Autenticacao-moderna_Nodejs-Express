@@ -91,6 +91,12 @@ jest.unstable_mockModule('../src/utils/redisLoginAttempts.js', () => ({
     deleteResetPasswordToken: jest.fn()
 }));
 
+jest.unstable_mockModule('../src/utils/userSessions.js', () => ({
+    addUserSession: jest.fn(),
+    removeUserSession: jest.fn(),
+    revokeAllUserSessions: jest.fn()
+}));
+
 jest.unstable_mockModule('../src/utils/tokenGenerator.js', () => ({
     generateVerificationCode: jest.fn(() => '123456'),
     generateSecureToken: jest.fn(() => 'secure_token_random_32_bytes'),
@@ -139,6 +145,8 @@ const {
     setResetPasswordToken,
     deleteResetPasswordToken
 } = await import('../src/utils/redisLoginAttempts.js');
+
+const { addUserSession, removeUserSession, revokeAllUserSessions } = await import('../src/utils/userSessions.js');
 
 const {
     generateVerificationCode,
@@ -489,6 +497,7 @@ describe('User Service - Reset Password', () => {
         expect(findUserById).toHaveBeenCalledWith('user_id_123');
         expect(bcrypt.default.compare).toHaveBeenCalledWith('OldPass123!@#', userData.password);
         expect(updateUserPassword).toHaveBeenCalledWith('user_id_123', expect.stringContaining('hashed_'));
+        expect(revokeAllUserSessions).toHaveBeenCalledWith('user_id_123');
         expect(incrementUserSessionVersion).toHaveBeenCalledWith('user_id_123');
         expect(logger.info).toHaveBeenCalled();
     });
@@ -666,6 +675,7 @@ describe('User Service - Validate Password Reset Token', () => {
         expect(getResetPasswordToken).toHaveBeenCalledWith('user@example.com');
         expect(updateUserPassword).toHaveBeenCalledWith(userData._id, expect.stringContaining('hashed_'));
         expect(deleteResetPasswordToken).toHaveBeenCalledWith('user@example.com');
+        expect(revokeAllUserSessions).toHaveBeenCalledWith(userData._id);
         expect(incrementUserSessionVersion).toHaveBeenCalledWith(userData._id);
         expect(result.message).toBe('Senha resetada com sucesso');
         expect(logger.info).toHaveBeenCalled();
