@@ -27,12 +27,14 @@ describe('Auth Middleware', () => {
     test('Deve permitir acesso quando usuário está autenticado', async () => {
         findUserByIdVerified.mockResolvedValue({
             id: 'user_id_123',
-            isVerified: true
+            isVerified: true,
+            sessionVersion: 1
         })
 
         const req = {
             session: {
-                user: 'user_id_123'
+                user: 'user_id_123',
+                version: 1
             },
             ip: '192.168.1.1'
         };
@@ -56,6 +58,46 @@ describe('Auth Middleware', () => {
         expect(logger.info).toHaveBeenCalled();
         expect(res.status).not.toHaveBeenCalled();
         expect(res.json).not.toHaveBeenCalled();
+    });
+
+    test('Deve negar acesso quando a sessão estiver expirada ou inválida', async () => {
+        findUserByIdVerified.mockResolvedValue({
+            id: 'user_id_123',
+            isVerified: true,
+            sessionVersion: 2
+        });
+
+        const destroyMock = jest.fn((callback) => callback());
+        const req = {
+            session: {
+                user: 'user_id_123',
+                version: 1,
+                destroy: destroyMock
+            },
+            ip: '192.168.1.1'
+        };
+
+        const res = {
+            status: jest.fn(function(code) {
+                this.statusCode = code;
+                return this;
+            }),
+            json: jest.fn(function(data) {
+                this.jsonData = data;
+                return this;
+            })
+        };
+
+        const next = jest.fn();
+
+        await Auth(req, res, next);
+
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res.json).toHaveBeenCalledWith({
+            message: 'Sessão expirada, faça login novamente'
+        });
+        expect(next).not.toHaveBeenCalled();
+        expect(destroyMock).toHaveBeenCalled();
     });
 
     test('Deve negar acesso quando o usuário não foi encontrado', async () => {
@@ -94,12 +136,14 @@ describe('Auth Middleware', () => {
     test('Deve negar acesso quando o usuário não está verificado', async () => {
         findUserByIdVerified.mockResolvedValue({
             id: 'user_id_123',
-            isVerified: false
+            isVerified: false,
+            sessionVersion: 0
         });
 
         const req = {
             session: {
-                user: 'user_id_123'
+                user: 'user_id_123',
+                version: 0
             },
             ip: '192.168.1.1'
         };
@@ -220,12 +264,14 @@ describe('Auth Middleware', () => {
     test('Deve logar informações de acesso autorizado corretamente', async () => {
         findUserByIdVerified.mockResolvedValue({
             id: 'user_id_456',
-            isVerified: true
+            isVerified: true,
+            sessionVersion: 0
         })
 
         const req = {
             session: {
-                user: 'user_id_456'
+                user: 'user_id_456',
+                version: 0
             },
             ip: '10.0.0.1'
         };

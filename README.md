@@ -272,6 +272,8 @@ Cookie: connect.sid=seu-session-id
 }
 ```
 
+> Ao alterar a senha, todas as sessões existentes são invalidadas automaticamente. O usuário precisa efetuar login novamente para continuar usando a aplicação.
+
 ### 2️⃣ Autenticação OAuth2 com Google
 
 #### Passo 1: Obter URL de autenticação do Google
@@ -316,6 +318,11 @@ A aplicação utiliza **Nodemailer** para envio de emails, com suporte a verific
 - Link contém token JWT com expiração de 10 minutos
 - Usuário deve clicar no link para ativar a conta
 - Após verificação, usuário pode fazer login normalmente
+
+#### Reset de Senha
+- Fluxo de reset usa JWT + Redis para validar token e código de verificação
+- Após redefinir a senha, o sistema incrementa a versão de sessão do usuário e invalida sessões antigas
+- Alternativa possível: usar `uuid4` como token único e armazenar no Redis com valor `{ id, email }`
 
 #### Configuração
 ```javascript

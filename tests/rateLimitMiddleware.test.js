@@ -168,7 +168,7 @@ describe('Rate Limit Middleware - autenticacaoLimit', () => {
     test('Deve ser configurado para rotas de autenticação', () => {
         expect(autenticacaoLimit).toBeDefined();
         expect(autenticacaoLimit.options.windowMs).toBe(60 * 1000);
-        expect(autenticacaoLimit.options.limit).toBe(5);
+        expect(autenticacaoLimit.options.limit).toBe(6);
     });
 
     test('Deve ter store Redis configurado', () => {

@@ -91,10 +91,11 @@ export const signUpWithOauth = async (req, res) => {
             };
 
             req.session.user = service._id;
+            req.session.version = service.sessionVersion ?? 0;
 
             req.session.save((err) => {
                 if(err) {
-                    logger.error('Erro ao salvar sessão após registro', err, {
+                    logger.error('Erro ao salvar sessão após registro com Oauth', err, {
                         usuarioId: service._id,
                         ip
                     });
@@ -156,6 +157,7 @@ export const signInWithOauth = async (req, res) => {
             };
 
             req.session.user = service._id;
+            req.session.version = service.sessionVersion ?? 0;
 
             req.session.save((err) => {
                 if(err) {
@@ -250,6 +252,7 @@ export const verifyUser = async (req, res) => {
             };
 
             req.session.user = service._id;
+            req.session.version = service.sessionVersion ?? 0;
 
             req.session.save((err) => {
                 if(err) {
@@ -310,6 +313,7 @@ export const signIn = async (req, res) => {
             };
 
             req.session.user = service._id;
+            req.session.version = service.sessionVersion ?? 0;
 
             req.session.save((err) => {
                 if(err) {

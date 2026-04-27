@@ -7,17 +7,17 @@ import {
     findUserById, 
     updateUserPassword, 
     findUserByIdEmail, 
-    changeUserStatusActive
+    changeUserStatusActive,
+    incrementUserSessionVersion
 } from "../repositories/userRepository.js";
 
 import bcrypt from "bcryptjs";
-import { OAuth2Client } from 'google-auth-library'
+import { OAuth2Client } from 'google-auth-library';
 import { logger } from "../config/logger.js";
 import jwt from "jsonwebtoken";
 import { transporter } from "../config/nodemailer.js";
 import { generateVerificationCode } from "../utils/tokenGenerator.js";
-import { setResetPasswordToken, deleteResetPasswordToken, getResetPasswordToken } from "../utils/redisLoginAttempts.js";
-import { incrementLoginAttempts, resetLoginAttempts, isLockedOut, getLoginAttempts } from "../utils/redisLoginAttempts.js";
+import { setResetPasswordToken, deleteResetPasswordToken, getResetPasswordToken, incrementLoginAttempts, resetLoginAttempts, isLockedOut, getLoginAttempts } from "../utils/redisLoginAttempts.js";
 
 export const OauthRequestSignUp = (ip, state) => {
     logger.debug('Iniciando processo de geração de url para autenticação Oauth', { 
@@ -338,7 +338,8 @@ export const resetPassword = async (newPassword, confirmPassword, password, id, 
     const newPasswordHash = await bcrypt.hashSync(newPassword);
 
     const updatePassword = await updateUserPassword(id, newPasswordHash);
-    logger.info('Senha do usuário atualizada com sucesso', { usuarioId: id });
+    await incrementUserSessionVersion(id);
+    logger.info('Senha do usuário atualizada com sucesso e sessões anteriores invalidadas', { usuarioId: id });
     
     return updatePassword;
 }
@@ -366,6 +367,16 @@ export const requestPasswordReset = async (email, ip) => {
         process.env.RESET_PASSWORD_SECRET,
         { expiresIn: 1000 * 60 * 15 }
     );
+
+    // Alternativa: em vez de JWT, você pode usar uuid4 e salvar o UUID no Redis.
+    // Exemplo:
+    // const resetToken = uuidv4();
+    // await setResetPasswordToken(resetToken, {
+    //   id: user._id,
+    //   email: user.email,
+    //   code: verificationCode
+    // });
+    // Dessa forma, a chave seria o UUID e o valor conteria { id, email, code }.
 
     await setResetPasswordToken(email, resetToken, verificationCode);
 
@@ -463,8 +474,9 @@ export const validatePasswordResetToken = async (token, code, newPassword, confi
 
     const newPasswordHash = await bcrypt.hash(newPassword, 10);
     await updateUserPassword(user._id, newPasswordHash);
+    await incrementUserSessionVersion(user._id);
 
-    logger.info('Senha do usuário resetada com sucesso', { 
+    logger.info('Senha do usuário resetada com sucesso e sessões anteriores invalidadas', { 
         usuarioId: user._id, 
         email,
         ip

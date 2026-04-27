@@ -22,13 +22,13 @@ export const createUserWithOauth = async (sub, name) => {
 
 export const findUserByEmail = async (email) => {
     return await User.findOne({ email })
-        .select('email name password _id authenticationType isVerified')
+        .select('email name password _id autenticationType isVerified sessionVersion')
         .lean();
 }
 
 export const findUserByOauth = async (sub) => {
     return await User.findOne({ subGoogle: sub })
-        .select('subGoogle _id')
+        .select('subGoogle _id sessionVersion')
         .lean();
 }
 
@@ -47,18 +47,26 @@ export const findUserById = async (id) => {
 
 export const findUserByIdEmail = async (id) => {
     return await User.findById(id)
-        .select('email isVerified')
+        .select('email isVerified sessionVersion')
         .lean();
 }
 
 export const findUserByIdVerified = async (id) => {
     return await User.findById(id)
-        .select('isVerified')
+        .select('isVerified sessionVersion')
         .lean();
 }
 
 export const updateUserPassword = async (id, newPassword) => {
     return await User.findByIdAndUpdate(id, { password: newPassword });
+};
+
+export const incrementUserSessionVersion = async (id) => {
+    return await User.findByIdAndUpdate(
+        id,
+        { $inc: { sessionVersion: 1 } },
+        { new: true }
+    ).lean();
 };
 
 export const changeUserStatusActive = async (id) => {

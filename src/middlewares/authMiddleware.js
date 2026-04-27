@@ -3,7 +3,7 @@ import { findUserByIdVerified } from '../repositories/userRepository.js';
 
 export const Auth = async (req, res, next) => {
     try {
-        if(!req.session.user) { 
+        if(!req.session?.user) { 
             logger.info('Acesso negado - token de autenticação ausente', {
                 usuarioId: 'Desconhecido',
                 ip: req.ip
@@ -23,6 +23,20 @@ export const Auth = async (req, res, next) => {
             return res.status(401).json({ message: 'Usuário não encontrado' });
         }
 
+        const sessionVersion = typeof req.session.version !== 'undefined' ? req.session.version : 0;
+        if (usuario.sessionVersion !== sessionVersion) {
+            if (typeof req.session.destroy === 'function') {
+                req.session.destroy(() => {});
+            }
+
+            logger.info('Acesso negado - sessão expirada ou inválida', {
+                usuarioId: req.session.user,
+                ip: req.ip
+            });
+
+            return res.status(401).json({ message: 'Sessão expirada, faça login novamente' });
+        }
+
         if (!usuario.isVerified) {
             logger.info('Acesso negado - usuário não verificado', {
                 usuarioId: req.session.user,
@@ -40,7 +54,7 @@ export const Auth = async (req, res, next) => {
         next();
     } catch (error) {
         logger.error('Token de autenticação inválido', error, {
-            usuarioId: req.session.user || 'Desconecido',
+            usuarioId: req.session?.user || 'Desconecido',
             ip: req.ip
         })
 

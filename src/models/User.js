@@ -9,7 +9,8 @@ const userSchema = new mongoose.Schema({
     subGoogle: { type: String, default: null },
     createdAt: { type: Date, default: Date.now },
     isVerified: { type: Boolean, default: false },
-    status: { type: String, enum: [ 'active', 'pending', 'blocked' ], default: 'pending' }
+    status: { type: String, enum: [ 'active', 'pending', 'blocked' ], default: 'pending' },
+    sessionVersion: { type: Number, default: 0 }
 });
 
 userSchema.pre('save', function(next){
