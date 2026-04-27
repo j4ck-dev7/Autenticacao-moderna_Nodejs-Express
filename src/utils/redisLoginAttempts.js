@@ -112,7 +112,7 @@ export const setResetPasswordToken = async (email, token, code) => {
         };
         
         await client.setEx(key, 60 * 15, JSON.stringify(data));
-        
+         
         logger.debug('Token de reset de senha armazenado no Redis', {
             usuarioId: 'Desconecido',
             email
