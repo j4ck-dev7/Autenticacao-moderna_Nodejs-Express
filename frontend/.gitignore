@@ -1,0 +1,10 @@
+node_modules/
+/dist
+/build
+/.pnp
+.pnp.js
+env.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
