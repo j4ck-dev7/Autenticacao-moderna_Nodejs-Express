@@ -399,6 +399,27 @@ A aplicação implementa múltiplas camadas de proteção para garantir a segura
 - **Previne Brute Force**: Mantém conexão aberta mas torna impraticável atacar rapidamente
 - **Começa após limite**: Primeira tentativa sem atraso, depois atraso progressivo
 
+## 🐳 Docker
+
+- **Arquivos adicionados**:
+  - `Dockerfile` — imagem da aplicação Node.js
+  - `docker-compose.yml` — orquestra `app`, `mongo` e `redis`
+  - `.dockerignore` — arquivos ignorados no build
+
+- **Como executar (desenvolvimento)**:
+
+```bash
+# Crie um arquivo .env com as variáveis necessárias (veja seção "Variáveis de Ambiente" neste README)
+docker-compose up --build
+```
+
+A API ficará disponível em `http://localhost:5000` (ou na porta definida em `PORT`).
+
+- **Observações**:
+  - O `docker-compose.yml` define um `MONGO_URL` local: `mongodb://mongo:27017/authdb`.
+  - Para produção, remova o `volumes` do serviço `app` e forneça variáveis de ambiente seguras pelo seu orquestrador.
+  - Garanta que `SESSION_SECRET` e `SECRET` estejam definidos no `.env` ou no ambiente do contêiner.
+
 ### 🔒 Criptografia
 - **Bcryptjs**: Hash de senhas com salt rounds configurado
 - **CryptoJS**: Criptografia adicional para dados sensíveis quando necessário
@@ -633,5 +654,3 @@ Todos os testes contêm comentários explicando:
 
 ## 📄 Licença
 Este projeto está licenciado sob a MIT License - veja o arquivo [LICENSE](LICENSE) para mais detalhes.
-
-**Contribuições são bem-vindas!** Para questões, sugestões ou relatórios de bugs, abra uma issue no repositório.
